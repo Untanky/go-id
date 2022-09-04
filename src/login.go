@@ -8,6 +8,7 @@ import (
 type User struct {
 	Identifier string
 	Passkey    string
+	Status     string
 }
 
 type LoginService struct {
@@ -59,10 +60,24 @@ func (service *LoginService) Login(identifier string, passkey string) error {
 
 	for _, user := range service.KnownUsers {
 		if user.Identifier == identifier && user.Passkey == passkey {
-			err = nil
+			if user.Status == "deactivated" {
+				err = errors.New("user is deactivated")
+			} else {
+				err = nil
+			}
 			break
 		}
 	}
 
 	return err
+}
+
+func (service *LoginService) Deactive(identifier string) error {
+	for _, user := range service.KnownUsers {
+		if user.Identifier == identifier {
+			user.Status = "deactivated"
+			return nil
+		}
+	}
+	return errors.New("No user found")
 }
