@@ -18,7 +18,7 @@ func (service *LoginService) Register(user *User) error {
 		return err
 	}
 
-	if user, _ := service.userRepo.Find(user.Identifier); user != nil {
+	if user, _ := service.userRepo.FindByIdentifier(user.Identifier); user != nil {
 		return errors.New("Identifier already exists")
 	}
 
@@ -54,7 +54,7 @@ func (service *LoginService) validatePasskey(passkey string) error {
 func (service *LoginService) Login(identifier string, passkey string) error {
 	err := errors.New("unauthorized")
 
-	if user, _ := service.userRepo.Find(identifier); user != nil && user.Passkey == passkey {
+	if user, _ := service.userRepo.FindByIdentifier(identifier); user != nil && user.Passkey == passkey {
 		if user.Status == Inactive {
 			err = errors.New("user is inactive")
 		} else {

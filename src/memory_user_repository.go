@@ -6,7 +6,7 @@ type MemoryUserRepository struct {
 	users []*User
 }
 
-func (repo *MemoryUserRepository) Find(identifier string) (*User, error) {
+func (repo *MemoryUserRepository) FindByIdentifier(identifier string) (*User, error) {
 	if repo.users == nil {
 		repo.users = []*User{}
 	}
@@ -20,7 +20,7 @@ func (repo *MemoryUserRepository) Find(identifier string) (*User, error) {
 }
 
 func (repo *MemoryUserRepository) Create(user *User) error {
-	foundUser, err := repo.Find(user.Identifier)
+	foundUser, err := repo.FindByIdentifier(user.Identifier)
 
 	if foundUser != nil {
 		return errors.New("user already exists")

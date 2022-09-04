@@ -89,7 +89,7 @@ func (suite *UserServiceTestSuite) TestDelete_RemoveUserFromKnownUsers() {
 
 	assert.Nil(suite.T(), err)
 
-	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Error(suite.T(), err, "no user found")
 	assert.Nil(suite.T(), foundUser)
 }

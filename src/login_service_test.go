@@ -105,11 +105,11 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 	err = suite.service.Register(user1)
 	assert.Nil(suite.T(), err)
 
-	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), foundUser, user0)
 
-	foundUser, err = suite.userRepo.Find(user1.Identifier)
+	foundUser, err = suite.userRepo.FindByIdentifier(user1.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), foundUser, user1)
 }
@@ -124,7 +124,7 @@ func (suite *RegisterTestSuite) TestRegister_ErrorWhenUserIdExists() {
 	err = suite.service.Register(user1)
 	assert.ErrorContains(suite.T(), err, "Identifier already exists")
 
-	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), foundUser, user0)
 }

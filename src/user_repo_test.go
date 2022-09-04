@@ -35,10 +35,10 @@ func (suite *UserRepoTestSuite) TestCreate_CreateTwoThenFindTwo() {
 	err = suite.repo.Create(suite.user1)
 	assert.Nil(suite.T(), err)
 
-	foundUser0, err := suite.repo.Find(suite.user0.Identifier)
+	foundUser0, err := suite.repo.FindByIdentifier(suite.user0.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.user0, foundUser0)
-	foundUser1, err := suite.repo.Find(suite.user1.Identifier)
+	foundUser1, err := suite.repo.FindByIdentifier(suite.user1.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.user1, foundUser1)
 }
@@ -63,7 +63,7 @@ func (suite *UserRepoTestSuite) TestUpdate_UpdateUserWhenFound() {
 	err = suite.repo.Update(updatedUser)
 	assert.Nil(suite.T(), err)
 
-	foundUser0, err := suite.repo.Find(updatedUser.Identifier)
+	foundUser0, err := suite.repo.FindByIdentifier(updatedUser.Identifier)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), updatedUser, foundUser0)
 }
@@ -92,7 +92,7 @@ func (suite *UserRepoTestSuite) TestRemove_ErrorWhenUserAlreadyRemoved() {
 
 	err = suite.repo.Remove(suite.user0.Identifier)
 
-	foundUser0, err := suite.repo.Find(suite.user0.Identifier)
+	foundUser0, err := suite.repo.FindByIdentifier(suite.user0.Identifier)
 	assert.ErrorContains(suite.T(), err, "no user found")
 	assert.Nil(suite.T(), foundUser0)
 

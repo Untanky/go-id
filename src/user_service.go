@@ -13,7 +13,7 @@ func (service *UserService) Init(userRepo UserRepository) {
 }
 
 func (service *UserService) Activate(identifier string) error {
-	user, err := service.userRepo.Find(identifier)
+	user, err := service.userRepo.FindByIdentifier(identifier)
 
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func (service *UserService) Activate(identifier string) error {
 }
 
 func (service *UserService) Inactivate(identifier string) error {
-	user, err := service.userRepo.Find(identifier)
+	user, err := service.userRepo.FindByIdentifier(identifier)
 
 	if err != nil {
 		return err
