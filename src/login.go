@@ -84,24 +84,41 @@ func (service *LoginService) Login(identifier string, passkey string) error {
 }
 
 func (service *LoginService) Activate(identifier string) error {
-	if user := service.findUser(identifier); user != nil {
-		if user.Status == Active {
-			return errors.New("user is already active")
-		}
-		user.Status = Active
-		return nil
+	user := service.findUser(identifier)
+
+	if user == nil {
+		return errors.New("no user found")
 	}
 
-	return errors.New("no user found")
+	if user.Status == Active {
+		return errors.New("user is already active")
+	}
+
+	user.Status = Active
+	return nil
 }
 
 func (service *LoginService) Inactivate(identifier string) error {
-	if user := service.findUser(identifier); user != nil {
-		if user.Status == Inactive {
-			return errors.New("user is already inactive")
-		}
-		user.Status = Inactive
-		return nil
+	user := service.findUser(identifier)
+	if user == nil {
+		return errors.New("no user found")
 	}
+
+	if user.Status == Inactive {
+		return errors.New("user is already inactive")
+	}
+
+	user.Status = Inactive
+	return nil
+}
+
+func (service *LoginService) Delete(identifier string) error {
+	for index, user := range service.KnownUsers {
+		if user.Identifier == identifier {
+			service.KnownUsers = append(service.KnownUsers[:index], service.KnownUsers[index+1:]...)
+			return nil
+		}
+	}
+
 	return errors.New("no user found")
 }
