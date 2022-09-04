@@ -12,7 +12,7 @@ type UserRepoTestSuite struct {
 	suite.Suite
 	user0 *User
 	user1 *User
-	repo  *UserRepository
+	repo  UserRepository
 }
 
 func (suite *UserRepoTestSuite) SetupTest() {
@@ -26,7 +26,7 @@ func (suite *UserRepoTestSuite) SetupTest() {
 		Passkey:    "abc",
 		Status:     Active,
 	}
-	suite.repo = new(UserRepository)
+	suite.repo = new(MemoryUserRepository)
 }
 
 func (suite *UserRepoTestSuite) TestCreate_CreateTwoThenFindTwo() {
