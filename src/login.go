@@ -5,10 +5,17 @@ import (
 	"strings"
 )
 
+type status string
+
+const (
+	Active   = status("active")
+	Inactive = status("inactive")
+)
+
 type User struct {
 	Identifier string
 	Passkey    string
-	Status     string
+	Status     status
 }
 
 type LoginService struct {
@@ -60,8 +67,8 @@ func (service *LoginService) Login(identifier string, passkey string) error {
 
 	for _, user := range service.KnownUsers {
 		if user.Identifier == identifier && user.Passkey == passkey {
-			if user.Status == "deactivated" {
-				err = errors.New("user is deactivated")
+			if user.Status == Inactive {
+				err = errors.New("user is inactive")
 			} else {
 				err = nil
 			}
@@ -72,12 +79,29 @@ func (service *LoginService) Login(identifier string, passkey string) error {
 	return err
 }
 
-func (service *LoginService) Deactive(identifier string) error {
+func (service *LoginService) Activate(identifier string) error {
 	for _, user := range service.KnownUsers {
 		if user.Identifier == identifier {
-			user.Status = "deactivated"
+			if user.Status == Active {
+				return errors.New("user is already active")
+			}
+			user.Status = Active
 			return nil
 		}
 	}
-	return errors.New("No user found")
+
+	return errors.New("no user found")
+}
+
+func (service *LoginService) Inactivate(identifier string) error {
+	for _, user := range service.KnownUsers {
+		if user.Identifier == identifier {
+			if user.Status == Inactive {
+				return errors.New("user is already inactive")
+			}
+			user.Status = Inactive
+			return nil
+		}
+	}
+	return errors.New("no user found")
 }
