@@ -29,6 +29,32 @@ func (suite *UserRepoTestSuite) SetupTest() {
 	suite.repo = new(MemoryUserRepository)
 }
 
+func (suite *UserRepoTestSuite) TestFindByIdentifierAndPasskey_ErrorWhenIdentifierNotFound() {
+	foundUser, err := suite.repo.FindByIdentifierAndPasskey(unknownUserId, "def")
+
+	assert.Nil(suite.T(), foundUser)
+	assert.Error(suite.T(), err, "user not found")
+}
+
+func (suite *UserRepoTestSuite) TestFindByIdentifierAndPasskey_ErrorWhenIdentifierFoundButPasskeyIncorrect() {
+	err := suite.repo.Create(suite.user0)
+	assert.Nil(suite.T(), err)
+
+	foundUser, err := suite.repo.FindByIdentifierAndPasskey(suite.user0.Identifier, "def")
+
+	assert.Nil(suite.T(), foundUser)
+	assert.Error(suite.T(), err, "passkey incorrect")
+}
+
+func (suite *UserRepoTestSuite) TestFindByIdentifierAndPasskey_ReturnWhenIdentifierAndPasskeyMatch() {
+	err := suite.repo.Create(suite.user0)
+	assert.Nil(suite.T(), err)
+
+	foundUser0, err := suite.repo.FindByIdentifierAndPasskey(suite.user0.Identifier, suite.user0.Passkey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.user0, foundUser0)
+}
+
 func (suite *UserRepoTestSuite) TestCreate_CreateTwoThenFindTwo() {
 	err := suite.repo.Create(suite.user0)
 	assert.Nil(suite.T(), err)
