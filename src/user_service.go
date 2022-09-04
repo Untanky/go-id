@@ -12,35 +12,27 @@ func (service *UserService) Init(userRepo UserRepository) {
 	service.userRepo = userRepo
 }
 
-func (service *UserService) findUser(identifier string) *User {
+func (service *UserService) Activate(identifier string) error {
 	user, err := service.userRepo.Find(identifier)
 
 	if err != nil {
-		return nil
-	}
-
-	return user
-}
-
-func (service *UserService) Activate(identifier string) error {
-	user := service.findUser(identifier)
-
-	if user == nil {
-		return errors.New("no user found")
+		return err
 	}
 
 	if user.Status == Active {
 		return errors.New("user is already active")
 	}
+	service.userRepo.Update(user)
 
 	user.Status = Active
 	return nil
 }
 
 func (service *UserService) Inactivate(identifier string) error {
-	user := service.findUser(identifier)
-	if user == nil {
-		return errors.New("no user found")
+	user, err := service.userRepo.Find(identifier)
+
+	if err != nil {
+		return err
 	}
 
 	if user.Status == Inactive {
@@ -48,6 +40,9 @@ func (service *UserService) Inactivate(identifier string) error {
 	}
 
 	user.Status = Inactive
+
+	service.userRepo.Update(user)
+
 	return nil
 }
 

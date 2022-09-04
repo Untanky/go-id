@@ -55,7 +55,8 @@ func (repo *MemoryUserRepository) Remove(identifier string) error {
 
 	for index, user := range repo.users {
 		if user.Identifier == identifier {
-			repo.users = append(repo.users[:index], repo.users[index+1:]...)
+			repo.users[index] = repo.users[len(repo.users)-1]
+			repo.users = repo.users[:len(repo.users)-1]
 			return nil
 		}
 	}

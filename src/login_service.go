@@ -13,22 +13,12 @@ func (service *LoginService) Init(userRepo UserRepository) {
 	service.userRepo = userRepo
 }
 
-func (service *LoginService) findUser(identifier string) *User {
-	user, err := service.userRepo.Find(identifier)
-
-	if err != nil {
-		return nil
-	}
-
-	return user
-}
-
 func (service *LoginService) Register(user *User) error {
 	if err := service.validatePasskey(user.Passkey); err != nil {
 		return err
 	}
 
-	if user := service.findUser(user.Identifier); user != nil {
+	if user, _ := service.userRepo.Find(user.Identifier); user != nil {
 		return errors.New("Identifier already exists")
 	}
 
@@ -64,7 +54,7 @@ func (service *LoginService) validatePasskey(passkey string) error {
 func (service *LoginService) Login(identifier string, passkey string) error {
 	err := errors.New("unauthorized")
 
-	if user := service.findUser(identifier); user != nil && user.Passkey == passkey {
+	if user, _ := service.userRepo.Find(identifier); user != nil && user.Passkey == passkey {
 		if user.Status == Inactive {
 			err = errors.New("user is inactive")
 		} else {
