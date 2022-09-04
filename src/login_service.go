@@ -51,16 +51,16 @@ func (service *LoginService) validatePasskey(passkey string) error {
 	return nil
 }
 
-func (service *LoginService) Login(identifier string, passkey string) error {
-	err := errors.New("unauthorized")
+func (service *LoginService) Login(identifier string, passkey string) (*User, error) {
+	user, foundErr := service.userRepo.FindByIdentifierAndPasskey(identifier, passkey)
 
-	if user, _ := service.userRepo.FindByIdentifier(identifier); user != nil && user.Passkey == passkey {
-		if user.Status == Inactive {
-			err = errors.New("user is inactive")
-		} else {
-			err = nil
-		}
+	if foundErr != nil {
+		return nil, errors.New("unauthorized")
 	}
 
-	return err
+	if user.Status == Inactive {
+		return nil, errors.New("user is inactive")
+	} else {
+		return user, nil
+	}
 }

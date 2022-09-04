@@ -41,42 +41,46 @@ func (suite *LoginTestSuite) SetupTest() {
 func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 	user0 := suite.knownUsers[0]
 	user1 := suite.knownUsers[1]
-	var err error
 
-	err = suite.service.Login(user0.Identifier, user0.Passkey)
+	loggedIn0, err := suite.service.Login(user0.Identifier, user0.Passkey)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), user0, loggedIn0)
 
-	err = suite.service.Login(user1.Identifier, user1.Passkey)
+	loggedIn1, err := suite.service.Login(user1.Identifier, user1.Passkey)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), user1, loggedIn1)
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
 	inactiveUser := suite.knownUsers[2]
-	var err error
 
-	err = suite.service.Login(inactiveUser.Identifier, inactiveUser.Passkey)
+	user, err := suite.service.Login(inactiveUser.Identifier, inactiveUser.Passkey)
 	assert.ErrorContains(suite.T(), err, "user is inactive")
+	assert.Nil(suite.T(), user)
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithKnownUserAndIncorrectPasskey() {
 	user0 := suite.knownUsers[0]
 	user1 := suite.knownUsers[1]
-	var err error
 
-	err = suite.service.Login(user0.Identifier, user1.Passkey)
+	user, err := suite.service.Login(user0.Identifier, user1.Passkey)
 	assert.ErrorContains(suite.T(), err, "unauthorized")
+	assert.Nil(suite.T(), user)
 
-	err = suite.service.Login(user1.Identifier, user0.Passkey)
+	user, err = suite.service.Login(user1.Identifier, user0.Passkey)
 	assert.ErrorContains(suite.T(), err, "unauthorized")
+	assert.Nil(suite.T(), user)
 
-	err = suite.service.Login(user1.Identifier, "foo")
+	user, err = suite.service.Login(user1.Identifier, "foo")
 	assert.ErrorContains(suite.T(), err, "unauthorized")
+	assert.Nil(suite.T(), user)
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithUnknownUser() {
-	err := suite.service.Login(unknownUserId, "xyz")
+	user, err := suite.service.Login(unknownUserId, "xyz")
 
 	assert.ErrorContains(suite.T(), err, "unauthorized")
+	assert.Nil(suite.T(), user)
 }
 
 type RegisterTestSuite struct {
