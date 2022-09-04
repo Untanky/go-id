@@ -21,7 +21,11 @@ type LoginTestSuite struct {
 
 func (suite *LoginTestSuite) SetupTest() {
 	suite.service = new(LoginService)
-	suite.service.KnownUsers = []*User{{Identifier: knownUserId + "0", Passkey: knownUserKey + "0", Status: Active}, {Identifier: knownUserId + "1", Passkey: knownUserKey + "1", Status: Active}}
+	suite.service.KnownUsers = []*User{
+		{Identifier: knownUserId + "0", Passkey: knownUserKey + "0", Status: Active},
+		{Identifier: knownUserId + "1", Passkey: knownUserKey + "1", Status: Active},
+		{Identifier: knownUserId + "2", Passkey: knownUserKey + "2", Status: Inactive},
+	}
 }
 
 func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
@@ -36,7 +40,15 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *LoginTestSuite) TestLogin_LoginWithKnownUserAndIncorrectPasskey() {
+func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
+	inactiveUser := suite.service.KnownUsers[2]
+	var err error
+
+	err = suite.service.Login(inactiveUser.Identifier, inactiveUser.Passkey)
+	assert.ErrorContains(suite.T(), err, "user is inactive")
+}
+
+func (suite *LoginTestSuite) TestLogin_ErrorWithKnownUserAndIncorrectPasskey() {
 	user0 := suite.service.KnownUsers[0]
 	user1 := suite.service.KnownUsers[1]
 	var err error
@@ -51,22 +63,19 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUserAndIncorrectPasskey() {
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 }
 
-func (suite *LoginTestSuite) TestLogin_LoginWithUnknownUser() {
+func (suite *LoginTestSuite) TestLogin_ErrorWithUnknownUser() {
 	err := suite.service.Login(unknownUserId, "xyz")
 
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 }
 
-func (suite *LoginTestSuite) TestInactivate_SetStatusToDeactivatedAndCannotLogin() {
+func (suite *LoginTestSuite) TestInactivate_SetStatusToDeactivated() {
 	user0 := suite.service.KnownUsers[0]
 
 	err := suite.service.Inactivate(user0.Identifier)
 
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), user0.Status, Inactive)
-
-	err = suite.service.Login(user0.Identifier, user0.Passkey)
-	assert.ErrorContains(suite.T(), err, "user is inactive")
 }
 
 func (suite *LoginTestSuite) TestInactivate_ErrWhenAlreadyDeactivated() {
