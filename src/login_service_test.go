@@ -16,21 +16,31 @@ const (
 
 type LoginTestSuite struct {
 	suite.Suite
-	service *LoginService
+	userRepo   UserRepository
+	knownUsers []*User
+	service    *LoginService
 }
 
 func (suite *LoginTestSuite) SetupTest() {
+	suite.userRepo = new(MemoryUserRepository)
+
 	suite.service = new(LoginService)
-	suite.service.KnownUsers = []*User{
+	suite.service.Init(suite.userRepo)
+
+	suite.knownUsers = []*User{
 		{Identifier: knownUserId + "0", Passkey: knownUserKey + "0", Status: Active},
 		{Identifier: knownUserId + "1", Passkey: knownUserKey + "1", Status: Active},
 		{Identifier: knownUserId + "2", Passkey: knownUserKey + "2", Status: Inactive},
 	}
+
+	for _, user := range suite.knownUsers {
+		suite.userRepo.Create(user)
+	}
 }
 
 func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
-	user0 := suite.service.KnownUsers[0]
-	user1 := suite.service.KnownUsers[1]
+	user0 := suite.knownUsers[0]
+	user1 := suite.knownUsers[1]
 	var err error
 
 	err = suite.service.Login(user0.Identifier, user0.Passkey)
@@ -41,7 +51,7 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
-	inactiveUser := suite.service.KnownUsers[2]
+	inactiveUser := suite.knownUsers[2]
 	var err error
 
 	err = suite.service.Login(inactiveUser.Identifier, inactiveUser.Passkey)
@@ -49,8 +59,8 @@ func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithKnownUserAndIncorrectPasskey() {
-	user0 := suite.service.KnownUsers[0]
-	user1 := suite.service.KnownUsers[1]
+	user0 := suite.knownUsers[0]
+	user1 := suite.knownUsers[1]
 	var err error
 
 	err = suite.service.Login(user0.Identifier, user1.Passkey)
@@ -70,7 +80,7 @@ func (suite *LoginTestSuite) TestLogin_ErrorWithUnknownUser() {
 }
 
 func (suite *LoginTestSuite) TestInactivate_SetStatusToDeactivated() {
-	user0 := suite.service.KnownUsers[0]
+	user0 := suite.knownUsers[0]
 
 	err := suite.service.Inactivate(user0.Identifier)
 
@@ -79,14 +89,14 @@ func (suite *LoginTestSuite) TestInactivate_SetStatusToDeactivated() {
 }
 
 func (suite *LoginTestSuite) TestInactivate_ErrWhenAlreadyDeactivated() {
-	user := suite.service.KnownUsers[0]
+	user0 := suite.knownUsers[0]
 
-	err := suite.service.Inactivate(user.Identifier)
+	err := suite.service.Inactivate(user0.Identifier)
 
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), user.Status, Inactive)
+	assert.Equal(suite.T(), user0.Status, Inactive)
 
-	err = suite.service.Inactivate(user.Identifier)
+	err = suite.service.Inactivate(user0.Identifier)
 	assert.ErrorContains(suite.T(), err, "user is already inactive")
 }
 
@@ -97,7 +107,7 @@ func (suite *LoginTestSuite) TestInactivate_ErrorWhenUserNotfound() {
 }
 
 func (suite *LoginTestSuite) TestActivate_SetStatusToActiveWhenStatusIsDeactivated() {
-	user0 := suite.service.KnownUsers[0]
+	user0 := suite.knownUsers[0]
 	err := suite.service.Inactivate(user0.Identifier)
 
 	err = suite.service.Activate(user0.Identifier)
@@ -107,7 +117,7 @@ func (suite *LoginTestSuite) TestActivate_SetStatusToActiveWhenStatusIsDeactivat
 }
 
 func (suite *LoginTestSuite) TestActivate_ErrorWhenStatusIsAlreadyActive() {
-	user0 := suite.service.KnownUsers[0]
+	user0 := suite.knownUsers[0]
 	err := suite.service.Activate(user0.Identifier)
 
 	assert.ErrorContains(suite.T(), err, "user is already active")
@@ -120,12 +130,16 @@ func (suite *LoginTestSuite) TestActivate_ErrorWhenUserNotFound() {
 }
 
 func (suite *LoginTestSuite) TestDelete_RemoveUserFromKnownUsers() {
-	user0 := suite.service.KnownUsers[0]
+	user0 := suite.knownUsers[0]
 
 	err := suite.service.Delete(user0.Identifier)
 
 	assert.Nil(suite.T(), err)
-	assert.NotContains(suite.T(), suite.service.KnownUsers, user0)
+
+	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	assert.Error(suite.T(), err, "no user found")
+	assert.Nil(suite.T(), foundUser)
+	// assert.NotContains(suite.T(), suite.knownUsers, user0)
 }
 
 func (suite *LoginTestSuite) TestDelete_ErrorWhenUserNotFound() {
@@ -136,12 +150,18 @@ func (suite *LoginTestSuite) TestDelete_ErrorWhenUserNotFound() {
 
 type RegisterTestSuite struct {
 	suite.Suite
-	service *LoginService
+	userRepo   UserRepository
+	service    *LoginService
+	knownUsers []*User
 }
 
 func (suite *RegisterTestSuite) SetupTest() {
+	suite.userRepo = new(MemoryUserRepository)
+
 	suite.service = new(LoginService)
-	suite.service.KnownUsers = []*User{}
+	suite.service.Init(suite.userRepo)
+
+	suite.knownUsers = []*User{}
 }
 
 func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
@@ -154,9 +174,13 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 	err = suite.service.Register(user1)
 	assert.Nil(suite.T(), err)
 
-	assert.Len(suite.T(), suite.service.KnownUsers, 2)
-	assert.Equal(suite.T(), suite.service.KnownUsers[0], user0)
-	assert.Equal(suite.T(), suite.service.KnownUsers[1], user1)
+	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), foundUser, user0)
+
+	foundUser, err = suite.userRepo.Find(user1.Identifier)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), foundUser, user1)
 }
 
 func (suite *RegisterTestSuite) TestRegister_ErrorWhenUserIdExists() {
@@ -169,8 +193,9 @@ func (suite *RegisterTestSuite) TestRegister_ErrorWhenUserIdExists() {
 	err = suite.service.Register(user1)
 	assert.ErrorContains(suite.T(), err, "Identifier already exists")
 
-	assert.Len(suite.T(), suite.service.KnownUsers, 1)
-	assert.Equal(suite.T(), suite.service.KnownUsers[0], user0)
+	foundUser, err := suite.userRepo.Find(user0.Identifier)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), foundUser, user0)
 }
 
 func (suite *RegisterTestSuite) TestRegister_PasskeyContainsLetterNumberAndSpecialChar() {
@@ -195,7 +220,7 @@ func (suite *RegisterTestSuite) TestRegister_PasskeyContainsLetterNumberAndSpeci
 	errWithoutSpecialChar := suite.service.Register(passKeyWithoutSpecialChar)
 	assert.ErrorContains(suite.T(), errWithoutSpecialChar, "Validation Error: Passkey missing special character")
 
-	assert.Len(suite.T(), suite.service.KnownUsers, 0)
+	assert.Len(suite.T(), suite.knownUsers, 0)
 }
 
 func TestLoginService(t *testing.T) {

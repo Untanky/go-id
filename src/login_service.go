@@ -19,16 +19,21 @@ type User struct {
 }
 
 type LoginService struct {
-	KnownUsers []*User
+	userRepo UserRepository
+}
+
+func (service *LoginService) Init(userRepo UserRepository) {
+	service.userRepo = userRepo
 }
 
 func (service *LoginService) findUser(identifier string) *User {
-	for _, user := range service.KnownUsers {
-		if user.Identifier == identifier {
-			return user
-		}
+	user, err := service.userRepo.Find(identifier)
+
+	if err != nil {
+		return nil
 	}
-	return nil
+
+	return user
 }
 
 func (service *LoginService) Register(user *User) error {
@@ -40,7 +45,7 @@ func (service *LoginService) Register(user *User) error {
 		return errors.New("Identifier already exists")
 	}
 
-	service.KnownUsers = append(service.KnownUsers, user)
+	service.userRepo.Create(user)
 
 	return nil
 }
@@ -113,12 +118,5 @@ func (service *LoginService) Inactivate(identifier string) error {
 }
 
 func (service *LoginService) Delete(identifier string) error {
-	for index, user := range service.KnownUsers {
-		if user.Identifier == identifier {
-			service.KnownUsers = append(service.KnownUsers[:index], service.KnownUsers[index+1:]...)
-			return nil
-		}
-	}
-
-	return errors.New("no user found")
+	return service.userRepo.Remove(identifier)
 }
