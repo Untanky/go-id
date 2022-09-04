@@ -110,6 +110,21 @@ func (suite *LoginTestSuite) TestActivate_ErrorWhenUserNotFound() {
 	assert.ErrorContains(suite.T(), err, "no user found")
 }
 
+func (suite *LoginTestSuite) TestDelete_RemoveUserFromKnownUsers() {
+	user0 := suite.service.KnownUsers[0]
+
+	err := suite.service.Delete(user0.Identifier)
+
+	assert.Nil(suite.T(), err)
+	assert.NotContains(suite.T(), suite.service.KnownUsers, user0)
+}
+
+func (suite *LoginTestSuite) TestDelete_ErrorWhenUserNotFound() {
+	err := suite.service.Delete(unknownUserId)
+
+	assert.ErrorContains(suite.T(), err, "no user found")
+}
+
 type RegisterTestSuite struct {
 	suite.Suite
 	service *LoginService
