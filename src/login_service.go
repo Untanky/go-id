@@ -74,36 +74,3 @@ func (service *LoginService) Login(identifier string, passkey string) error {
 
 	return err
 }
-
-func (service *LoginService) Activate(identifier string) error {
-	user := service.findUser(identifier)
-
-	if user == nil {
-		return errors.New("no user found")
-	}
-
-	if user.Status == Active {
-		return errors.New("user is already active")
-	}
-
-	user.Status = Active
-	return nil
-}
-
-func (service *LoginService) Inactivate(identifier string) error {
-	user := service.findUser(identifier)
-	if user == nil {
-		return errors.New("no user found")
-	}
-
-	if user.Status == Inactive {
-		return errors.New("user is already inactive")
-	}
-
-	user.Status = Inactive
-	return nil
-}
-
-func (service *LoginService) Delete(identifier string) error {
-	return service.userRepo.Remove(identifier)
-}
