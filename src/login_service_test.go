@@ -5,6 +5,7 @@ import (
 
 	. "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -12,20 +13,32 @@ const (
 	knownUserId   = "knownUser"
 	knownUserKey  = "Test1Test!"
 	unknownUserId = "unknownUser"
+	encrypted     = "abcdfa"
 )
+
+type MockEncrypter struct {
+	mock.Mock
+}
+
+func (m *MockEncrypter) Encrypt(passkey []byte, salt []byte) []byte {
+	args := m.Called(passkey, salt)
+	return []byte(args.String(0))
+}
 
 type LoginTestSuite struct {
 	suite.Suite
 	userRepo   UserRepository
+	encrypter  *MockEncrypter
 	knownUsers []*User
 	service    *LoginService
 }
 
 func (suite *LoginTestSuite) SetupTest() {
 	suite.userRepo = new(MemoryUserRepository)
+	suite.encrypter = new(MockEncrypter)
 
 	suite.service = new(LoginService)
-	suite.service.Init(suite.userRepo)
+	suite.service.Init(suite.userRepo, suite.encrypter)
 
 	suite.knownUsers = []*User{
 		{Identifier: knownUserId + "0", Passkey: knownUserKey + "0", Status: Active},
@@ -34,7 +47,13 @@ func (suite *LoginTestSuite) SetupTest() {
 	}
 
 	for _, user := range suite.knownUsers {
-		suite.userRepo.Create(user)
+		suite.encrypter.On("Encrypt", []byte(user.Passkey), []byte("salt")).Return(encrypted)
+		copy := &User{
+			Identifier: user.Identifier,
+			Passkey:    user.Passkey,
+			Status:     user.Status,
+		}
+		suite.service.Register(copy)
 	}
 }
 
@@ -42,19 +61,31 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 	user0 := suite.knownUsers[0]
 	user1 := suite.knownUsers[1]
 
-	loggedIn0, err := suite.service.Login(user0.Identifier, user0.Passkey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), user0, loggedIn0)
+	expected0 := &User{
+		Identifier: user0.Identifier,
+		Passkey:    encrypted,
+		Status:     user0.Status,
+	}
 
-	loggedIn1, err := suite.service.Login(user1.Identifier, user1.Passkey)
+	expected1 := &User{
+		Identifier: user1.Identifier,
+		Passkey:    encrypted,
+		Status:     user1.Status,
+	}
+
+	loggedIn0, err := suite.service.Login(user0.Identifier, encrypted)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), user1, loggedIn1)
+	assert.Equal(suite.T(), expected0, loggedIn0)
+
+	loggedIn1, err := suite.service.Login(user1.Identifier, encrypted)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), expected1, loggedIn1)
 }
 
 func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
 	inactiveUser := suite.knownUsers[2]
 
-	user, err := suite.service.Login(inactiveUser.Identifier, inactiveUser.Passkey)
+	user, err := suite.service.Login(inactiveUser.Identifier, encrypted)
 	assert.ErrorContains(suite.T(), err, "user is inactive")
 	assert.Nil(suite.T(), user)
 }
@@ -86,28 +117,37 @@ func (suite *LoginTestSuite) TestLogin_ErrorWithUnknownUser() {
 type RegisterTestSuite struct {
 	suite.Suite
 	userRepo   UserRepository
+	encrypter  *MockEncrypter
 	service    *LoginService
 	knownUsers []*User
 }
 
 func (suite *RegisterTestSuite) SetupTest() {
 	suite.userRepo = new(MemoryUserRepository)
+	suite.encrypter = new(MockEncrypter)
 
 	suite.service = new(LoginService)
-	suite.service.Init(suite.userRepo)
+	suite.service.Init(suite.userRepo, suite.encrypter)
 
 	suite.knownUsers = []*User{}
 }
 
 func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 	var err error
-	user0 := &User{knownUserId + "0", knownUserKey, Active}
-	user1 := &User{knownUserId + "1", knownUserKey, Active}
+	user0 := &User{knownUserId + "0", knownUserKey + "0", Active}
+	encrypted0 := "abc"
+	user1 := &User{knownUserId + "1", knownUserKey + "1", Active}
+	encrypted1 := "def"
+
+	suite.encrypter.On("Encrypt", []byte(user0.Passkey), []byte("salt")).Return(encrypted0)
+	suite.encrypter.On("Encrypt", []byte(user1.Passkey), []byte("salt")).Return(encrypted1)
 
 	err = suite.service.Register(user0)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), encrypted0, user0.Passkey)
 	err = suite.service.Register(user1)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), encrypted1, user1.Passkey)
 
 	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
@@ -121,7 +161,10 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 func (suite *RegisterTestSuite) TestRegister_ErrorWhenUserIdExists() {
 	var err error
 	user0 := &User{knownUserId, knownUserKey, Active}
+	encrypted0 := "abc"
 	user1 := &User{knownUserId, knownUserKey, Active}
+
+	suite.encrypter.On("Encrypt", []byte(user0.Passkey), []byte("salt")).Return(encrypted0)
 
 	err = suite.service.Register(user0)
 	assert.Nil(suite.T(), err)

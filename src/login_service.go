@@ -3,20 +3,37 @@ package goid
 import (
 	"errors"
 	"strings"
+
+	"golang.org/x/crypto/argon2"
 )
 
-type LoginService struct {
-	userRepo UserRepository
+type Encrypter interface {
+	Encrypt(passkey []byte, salt []byte) []byte
 }
 
-func (service *LoginService) Init(userRepo UserRepository) {
+type Argon2Encrypter struct {
+}
+
+func (encrypter *Argon2Encrypter) Encrypt(passkey []byte, salt []byte) []byte {
+	return argon2.IDKey(passkey, salt, 1, 128*1024, 8, 1024)
+}
+
+type LoginService struct {
+	userRepo  UserRepository
+	encrypter Encrypter
+}
+
+func (service *LoginService) Init(userRepo UserRepository, encrypter Encrypter) {
 	service.userRepo = userRepo
+	service.encrypter = encrypter
 }
 
 func (service *LoginService) Register(user *User) error {
 	if err := service.validatePasskey(user.Passkey); err != nil {
 		return err
 	}
+
+	user.Passkey = string(service.encrypter.Encrypt([]byte(user.Passkey), []byte("salt")))
 
 	if user, _ := service.userRepo.FindByIdentifier(user.Identifier); user != nil {
 		return errors.New("Identifier already exists")
