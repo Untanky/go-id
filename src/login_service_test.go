@@ -1,6 +1,8 @@
 package goid_test
 
 import (
+	"bytes"
+	"fmt"
 	"testing"
 
 	. "github.com/Untanky/go-id/src"
@@ -22,7 +24,17 @@ type MockEncrypter struct {
 
 func (m *MockEncrypter) Encrypt(passkey []byte, salt []byte) []byte {
 	args := m.Called(passkey, salt)
-	return []byte(args.String(0))
+	hash := []byte(args.String(0))
+
+	return m.stashSalt(hash, salt)
+}
+
+func (m *MockEncrypter) stashSalt(hash []byte, salt []byte) []byte {
+	return append(salt, append([]byte{':'}, hash...)...)
+}
+
+func (m *MockEncrypter) RetrieveSalt(hash []byte) []byte {
+	return bytes.SplitN(hash, []byte{':'}, 1)[0]
 }
 
 type LoginTestSuite struct {
@@ -46,8 +58,8 @@ func (suite *LoginTestSuite) SetupTest() {
 		{Identifier: knownUserId + "2", Passkey: knownUserKey + "2", Status: Inactive},
 	}
 
-	for _, user := range suite.knownUsers {
-		suite.encrypter.On("Encrypt", []byte(user.Passkey), []byte("salt")).Return(encrypted)
+	for index, user := range suite.knownUsers {
+		suite.encrypter.On("Encrypt", []byte(user.Passkey), []byte("salt")).Return(fmt.Sprintf("%s%d", encrypted, index))
 		copy := &User{
 			Identifier: user.Identifier,
 			Passkey:    user.Passkey,
@@ -63,21 +75,21 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 
 	expected0 := &User{
 		Identifier: user0.Identifier,
-		Passkey:    encrypted,
+		Passkey:    "salt:" + encrypted + "0",
 		Status:     user0.Status,
 	}
 
 	expected1 := &User{
 		Identifier: user1.Identifier,
-		Passkey:    encrypted,
+		Passkey:    "salt:" + encrypted + "1",
 		Status:     user1.Status,
 	}
 
-	loggedIn0, err := suite.service.Login(user0.Identifier, encrypted)
+	loggedIn0, err := suite.service.Login(user0.Identifier, expected0.Passkey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), expected0, loggedIn0)
 
-	loggedIn1, err := suite.service.Login(user1.Identifier, encrypted)
+	loggedIn1, err := suite.service.Login(user1.Identifier, expected1.Passkey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), expected1, loggedIn1)
 }
@@ -85,7 +97,7 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 func (suite *LoginTestSuite) TestLogin_ErrorWithInactiveUser() {
 	inactiveUser := suite.knownUsers[2]
 
-	user, err := suite.service.Login(inactiveUser.Identifier, encrypted)
+	user, err := suite.service.Login(inactiveUser.Identifier, "salt:"+encrypted+"2")
 	assert.ErrorContains(suite.T(), err, "user is inactive")
 	assert.Nil(suite.T(), user)
 }
@@ -94,11 +106,11 @@ func (suite *LoginTestSuite) TestLogin_ErrorWithKnownUserAndIncorrectPasskey() {
 	user0 := suite.knownUsers[0]
 	user1 := suite.knownUsers[1]
 
-	user, err := suite.service.Login(user0.Identifier, user1.Passkey)
+	user, err := suite.service.Login(user0.Identifier, "salt:"+encrypted+"1")
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 	assert.Nil(suite.T(), user)
 
-	user, err = suite.service.Login(user1.Identifier, user0.Passkey)
+	user, err = suite.service.Login(user1.Identifier, "salt:"+encrypted+"0")
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 	assert.Nil(suite.T(), user)
 
@@ -144,10 +156,10 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 
 	err = suite.service.Register(user0)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), encrypted0, user0.Passkey)
+	assert.Equal(suite.T(), "salt:"+encrypted0, user0.Passkey)
 	err = suite.service.Register(user1)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), encrypted1, user1.Passkey)
+	assert.Equal(suite.T(), "salt:"+encrypted1, user1.Passkey)
 
 	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
