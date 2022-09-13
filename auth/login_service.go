@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	. "github.com/Untanky/go-id/src"
@@ -70,7 +69,6 @@ func (service *LoginService) Login(identifier string, passkey string) (*User, er
 	}
 
 	salt := service.encrypter.RetrieveSalt([]byte(user.Passkey))
-	fmt.Println(string(salt))
 	encrptedPasskey := string(service.encrypter.Encrypt([]byte(passkey), salt))
 
 	if encrptedPasskey != user.Passkey {
