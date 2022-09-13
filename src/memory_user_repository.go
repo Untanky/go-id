@@ -19,20 +19,6 @@ func (repo *MemoryUserRepository) FindByIdentifier(identifier string) (*User, er
 	return nil, errors.New("no user found")
 }
 
-func (repo *MemoryUserRepository) FindByIdentifierAndPasskey(identifier string, passkey string) (*User, error) {
-	user, err := repo.FindByIdentifier(identifier)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if user.Passkey != passkey {
-		return nil, errors.New("passkey incorrect")
-	}
-
-	return user, nil
-}
-
 func (repo *MemoryUserRepository) Create(user *User) error {
 	foundUser, err := repo.FindByIdentifier(user.Identifier)
 
