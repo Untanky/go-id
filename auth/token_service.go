@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type Jwt string
@@ -18,6 +18,9 @@ func (service *TokenService) CreateRefreshToken(subject string, session string) 
 		"iat": time.Now().Unix(),
 		"exp": time.Now().AddDate(1, 0, 0).Unix(),
 	}
-	payloadBytes, _ := json.Marshal(payload)
-	return fmt.Sprintf(".%s.", string(payloadBytes)), nil
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(payload))
+	tokenString, err := token.SignedString([]byte("key"))
+
+	return string(tokenString), err
 }

@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -27,8 +28,9 @@ func (suite *TokenTestSuite) Test_DoNothing() {
 	assert.Nil(suite.T(), err)
 
 	splitToken := strings.SplitN(tokenString, ".", 3)
+	payloadString, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(splitToken[1])
 	payload := map[string]interface{}{}
-	err = json.Unmarshal([]byte(splitToken[1]), &payload)
+	err = json.Unmarshal(payloadString, &payload)
 
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), sid, payload["sid"])
