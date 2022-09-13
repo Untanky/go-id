@@ -3,6 +3,7 @@ package goid
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
@@ -26,7 +27,7 @@ func (encrypter *Argon2Encrypter) stashSalt(hash []byte, salt []byte) []byte {
 }
 
 func (encrypter *Argon2Encrypter) RetrieveSalt(hash []byte) []byte {
-	return bytes.SplitN(hash, []byte{':'}, 1)[0]
+	return bytes.SplitN(hash, []byte{':'}, 2)[0]
 }
 
 type LoginService struct {
@@ -80,7 +81,7 @@ func (service *LoginService) validatePasskey(passkey string) error {
 }
 
 func (service *LoginService) Login(identifier string, passkey string) (*User, error) {
-	user, foundErr := service.userRepo.FindByIdentifierAndPasskey(identifier, passkey)
+	user, foundErr := service.userRepo.FindByIdentifier(identifier)
 
 	if foundErr != nil {
 		return nil, errors.New("unauthorized")
@@ -88,7 +89,15 @@ func (service *LoginService) Login(identifier string, passkey string) (*User, er
 
 	if user.Status == Inactive {
 		return nil, errors.New("user is inactive")
-	} else {
-		return user, nil
 	}
+
+	salt := service.encrypter.RetrieveSalt([]byte(user.Passkey))
+	fmt.Println(string(salt))
+	encrptedPasskey := string(service.encrypter.Encrypt([]byte(passkey), salt))
+
+	if encrptedPasskey != user.Passkey {
+		return nil, errors.New("unauthorized")
+	}
+
+	return user, nil
 }

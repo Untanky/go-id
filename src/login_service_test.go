@@ -1,7 +1,6 @@
 package goid_test
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -20,21 +19,14 @@ const (
 
 type MockEncrypter struct {
 	mock.Mock
+	Argon2Encrypter
 }
 
 func (m *MockEncrypter) Encrypt(passkey []byte, salt []byte) []byte {
 	args := m.Called(passkey, salt)
 	hash := []byte(args.String(0))
 
-	return m.stashSalt(hash, salt)
-}
-
-func (m *MockEncrypter) stashSalt(hash []byte, salt []byte) []byte {
 	return append(salt, append([]byte{':'}, hash...)...)
-}
-
-func (m *MockEncrypter) RetrieveSalt(hash []byte) []byte {
-	return bytes.SplitN(hash, []byte{':'}, 1)[0]
 }
 
 type LoginTestSuite struct {
@@ -85,11 +77,11 @@ func (suite *LoginTestSuite) TestLogin_LoginWithKnownUser() {
 		Status:     user1.Status,
 	}
 
-	loggedIn0, err := suite.service.Login(user0.Identifier, expected0.Passkey)
+	loggedIn0, err := suite.service.Login(user0.Identifier, user0.Passkey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), expected0, loggedIn0)
 
-	loggedIn1, err := suite.service.Login(user1.Identifier, expected1.Passkey)
+	loggedIn1, err := suite.service.Login(user1.Identifier, user1.Passkey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), expected1, loggedIn1)
 }
@@ -106,13 +98,15 @@ func (suite *LoginTestSuite) TestLogin_ErrorWithKnownUserAndIncorrectPasskey() {
 	user0 := suite.knownUsers[0]
 	user1 := suite.knownUsers[1]
 
-	user, err := suite.service.Login(user0.Identifier, "salt:"+encrypted+"1")
+	user, err := suite.service.Login(user0.Identifier, user1.Passkey)
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 	assert.Nil(suite.T(), user)
 
-	user, err = suite.service.Login(user1.Identifier, "salt:"+encrypted+"0")
+	user, err = suite.service.Login(user1.Identifier, user0.Passkey)
 	assert.ErrorContains(suite.T(), err, "unauthorized")
 	assert.Nil(suite.T(), user)
+
+	suite.encrypter.On("Encrypt", []byte("foo"), []byte("salt")).Return("abc")
 
 	user, err = suite.service.Login(user1.Identifier, "foo")
 	assert.ErrorContains(suite.T(), err, "unauthorized")
@@ -148,8 +142,10 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 	var err error
 	user0 := &User{knownUserId + "0", knownUserKey + "0", Active}
 	encrypted0 := "abc"
+	expected0 := &User{user0.Identifier, "salt:" + encrypted0, user0.Status}
 	user1 := &User{knownUserId + "1", knownUserKey + "1", Active}
 	encrypted1 := "def"
+	expected1 := &User{user1.Identifier, "salt:" + encrypted1, user1.Status}
 
 	suite.encrypter.On("Encrypt", []byte(user0.Passkey), []byte("salt")).Return(encrypted0)
 	suite.encrypter.On("Encrypt", []byte(user1.Passkey), []byte("salt")).Return(encrypted1)
@@ -163,29 +159,29 @@ func (suite *RegisterTestSuite) TestRegister_KnownUserShouldContainNewUser() {
 
 	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), foundUser, user0)
+	assert.Equal(suite.T(), foundUser, expected0)
 
 	foundUser, err = suite.userRepo.FindByIdentifier(user1.Identifier)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), foundUser, user1)
+	assert.Equal(suite.T(), foundUser, expected1)
 }
 
 func (suite *RegisterTestSuite) TestRegister_ErrorWhenUserIdExists() {
-	var err error
 	user0 := &User{knownUserId, knownUserKey, Active}
 	encrypted0 := "abc"
 	user1 := &User{knownUserId, knownUserKey, Active}
+	expected0 := &User{user0.Identifier, "salt:" + encrypted0, user0.Status}
 
 	suite.encrypter.On("Encrypt", []byte(user0.Passkey), []byte("salt")).Return(encrypted0)
 
-	err = suite.service.Register(user0)
+	err := suite.service.Register(user0)
 	assert.Nil(suite.T(), err)
 	err = suite.service.Register(user1)
 	assert.ErrorContains(suite.T(), err, "Identifier already exists")
 
 	foundUser, err := suite.userRepo.FindByIdentifier(user0.Identifier)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), foundUser, user0)
+	assert.Equal(suite.T(), foundUser, expected0)
 }
 
 func (suite *RegisterTestSuite) TestRegister_PasskeyContainsLetterNumberAndSpecialChar() {
