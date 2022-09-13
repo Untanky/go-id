@@ -1,34 +1,10 @@
 package goid
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"strings"
-
-	"golang.org/x/crypto/argon2"
 )
-
-type Encrypter interface {
-	Encrypt(passkey []byte, salt []byte) []byte
-	RetrieveSalt(hash []byte) []byte
-}
-
-type Argon2Encrypter struct{}
-
-func (encrypter *Argon2Encrypter) Encrypt(passkey []byte, salt []byte) []byte {
-	hash := argon2.IDKey(passkey, salt, 1, 128*1024, 8, 1024)
-
-	return encrypter.stashSalt(hash, salt)
-}
-
-func (encrypter *Argon2Encrypter) stashSalt(hash []byte, salt []byte) []byte {
-	return append(salt, append([]byte{':'}, hash...)...)
-}
-
-func (encrypter *Argon2Encrypter) RetrieveSalt(hash []byte) []byte {
-	return bytes.SplitN(hash, []byte{':'}, 2)[0]
-}
 
 type LoginService struct {
 	userRepo  UserRepository

@@ -6,7 +6,6 @@ import (
 
 	. "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -16,18 +15,6 @@ const (
 	unknownUserId = "unknownUser"
 	encrypted     = "abcdfa"
 )
-
-type MockEncrypter struct {
-	mock.Mock
-	Argon2Encrypter
-}
-
-func (m *MockEncrypter) Encrypt(passkey []byte, salt []byte) []byte {
-	args := m.Called(passkey, salt)
-	hash := []byte(args.String(0))
-
-	return append(salt, append([]byte{':'}, hash...)...)
-}
 
 type LoginTestSuite struct {
 	suite.Suite
