@@ -1,9 +1,11 @@
-package goid
+package auth
 
 import (
 	"errors"
 	"fmt"
 	"strings"
+
+	. "github.com/Untanky/go-id/src"
 )
 
 type LoginService struct {

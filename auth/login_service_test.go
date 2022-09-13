@@ -1,9 +1,10 @@
-package goid_test
+package auth_test
 
 import (
 	"fmt"
 	"testing"
 
+	. "github.com/Untanky/go-id/auth"
 	. "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

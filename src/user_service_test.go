@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	knownUserId   = "knownUser"
+	knownUserKey  = "Test1Test!"
+	unknownUserId = "unknownUser"
+	encrypted     = "abcdfa"
+)
+
 type UserServiceTestSuite struct {
 	suite.Suite
 	userRepo   UserRepository
