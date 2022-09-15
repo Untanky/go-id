@@ -4,13 +4,14 @@ import (
 	"errors"
 	"time"
 
+	. "github.com/Untanky/go-id/src"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 type Jwt string
 
 type TokenService struct {
-	Secret []byte
+	Secret Secret
 }
 
 func (service *TokenService) CreateRefreshToken(subject string, session string) (string, error) {
@@ -22,7 +23,7 @@ func (service *TokenService) CreateRefreshToken(subject string, session string) 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(payload))
-	tokenString, err := token.SignedString(service.Secret)
+	tokenString, err := token.SignedString(service.Secret.GetSecret())
 
 	return string(tokenString), err
 }
@@ -33,7 +34,7 @@ func (service *TokenService) ValidateRefreshToken(tokenString string) (map[strin
 			return nil, errors.New("unexpected signing method")
 		}
 
-		return service.Secret, nil
+		return service.Secret.GetSecret(), nil
 	})
 
 	if err != nil {

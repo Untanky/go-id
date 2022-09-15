@@ -8,6 +8,7 @@ import (
 	"time"
 
 	. "github.com/Untanky/go-id/auth"
+	. "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,7 +20,7 @@ type TokenTestSuite struct {
 
 func (suite *TokenTestSuite) SetupTest() {
 	suite.service = new(TokenService)
-	suite.service.Secret = []byte("key")
+	suite.service.Secret = NewSecretValue([]byte("key"))
 }
 
 func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
