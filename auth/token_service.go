@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -9,6 +11,7 @@ import (
 type Jwt string
 
 type TokenService struct {
+	Secret []byte
 }
 
 func (service *TokenService) CreateRefreshToken(subject string, session string) (string, error) {
@@ -20,7 +23,27 @@ func (service *TokenService) CreateRefreshToken(subject string, session string) 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(payload))
-	tokenString, err := token.SignedString([]byte("key"))
+	tokenString, err := token.SignedString(service.Secret)
 
 	return string(tokenString), err
+}
+
+func (service *TokenService) ValidateRefreshToken(tokenString string) (map[string]interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+		}
+
+		return service.Secret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return map[string]interface{}(claims), nil
+	} else {
+		return nil, errors.New("invalid token")
+	}
 }
