@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -31,7 +30,7 @@ func (service *TokenService) CreateRefreshToken(subject string, session string) 
 func (service *TokenService) ValidateRefreshToken(tokenString string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+			return nil, errors.New("unexpected signing method")
 		}
 
 		return service.Secret, nil

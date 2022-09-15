@@ -40,9 +40,9 @@ func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	assert.Equal(suite.T(), float64(time.Now().Unix()), payload["iat"])
 	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payload["exp"])
 
-	payload, err = suite.service.ValidateRefreshToken(tokenString)
+	validatedPayload, err := suite.service.ValidateRefreshToken(tokenString)
 
-	assert.NotNil(suite.T(), payload)
+	assert.Equal(suite.T(), payload, validatedPayload)
 	assert.Nil(suite.T(), err)
 }
 
@@ -52,7 +52,25 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecr
 	payload, err := suite.service.ValidateRefreshToken(fakeTokenString)
 
 	assert.Nil(suite.T(), payload)
-	assert.ErrorContains(suite.T(), err, "signature is invalid")
+	assert.ErrorContains(suite.T(), err, "signature")
+}
+
+func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired() {
+	expiredTokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.UoWNJ5MjP4013Wll-m8WeLu2MR6pczHD2usf_A58Yww"
+
+	payload, err := suite.service.ValidateRefreshToken(expiredTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "expired")
+}
+
+func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
+	futureTokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.eMy2GxxPi1MXxz46u_aJ24Bb4N-RDdHjqc_kPDwn8Nw"
+
+	payload, err := suite.service.ValidateRefreshToken(futureTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "before issued")
 }
 
 func TestTokenService(t *testing.T) {
