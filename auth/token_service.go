@@ -10,17 +10,18 @@ import (
 
 type Jwt string
 
-type TokenService struct {
+type TokenService[Payload any] interface {
+	Create(payload Payload) (string, error)
+	Validate(token string) (Payload, error)
+}
+
+type RefreshTokenService struct {
 	Secret Secret
 }
 
-func (service *TokenService) CreateRefreshToken(subject string, session string) (string, error) {
-	payload := map[string]interface{}{
-		"sub": subject,
-		"sid": session,
-		"iat": time.Now().Unix(),
-		"exp": time.Now().AddDate(1, 0, 0).Unix(),
-	}
+func (service *RefreshTokenService) Create(payload map[string]interface{}) (string, error) {
+	payload["iat"] = time.Now().Unix()
+	payload["exp"] = time.Now().AddDate(1, 0, 0).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(payload))
 	tokenString, err := token.SignedString(service.Secret.GetSecret())
@@ -28,7 +29,7 @@ func (service *TokenService) CreateRefreshToken(subject string, session string) 
 	return string(tokenString), err
 }
 
-func (service *TokenService) ValidateRefreshToken(tokenString string) (map[string]interface{}, error) {
+func (service *RefreshTokenService) Validate(tokenString string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
