@@ -8,8 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type Jwt string
-
 type TokenService[Payload any] interface {
 	Create(payload Payload) (string, error)
 	Validate(token string) (Payload, error)
