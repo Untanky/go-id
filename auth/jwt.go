@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -44,7 +43,6 @@ func readBase64Json(base64Json string) (map[string]interface{}, error) {
 
 	var object map[string]interface{}
 	err = json.Unmarshal(utf8Json, &object)
-	fmt.Println(object)
 	if err != nil {
 		return map[string]interface{}{}, errors.New("cannot unmarschal json")
 	}
@@ -52,8 +50,14 @@ func readBase64Json(base64Json string) (map[string]interface{}, error) {
 	return object, nil
 }
 
-func (jwt *Jwt) Payload() payload {
-	return make(payload)
+func (jwt *Jwt) Payload() (payload, error) {
+	splitJwt := strings.SplitN(string(*jwt), ".", 3)
+	payloadMap, err := readBase64Json(splitJwt[1])
+	if err != nil {
+		return payload{}, err
+	}
+
+	return payload(payloadMap), nil
 }
 
 func (jwt *Jwt) Validate(key string) error {
@@ -61,5 +65,5 @@ func (jwt *Jwt) Validate(key string) error {
 }
 
 func CreateJwt() Jwt {
-	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.."
+	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30=."
 }
