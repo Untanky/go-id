@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"strings"
 
@@ -64,10 +66,35 @@ func (jwt *Jwt) Payload() (payload, error) {
 
 func (token *Jwt) Validate(key string) error {
 	_, err := jwt.Parse(string(*token), func(t *jwt.Token) (interface{}, error) {
-		return []byte(key), nil
+		switch t.Method.(type) {
+		case *jwt.SigningMethodHMAC:
+			return []byte(key), nil
+		case *jwt.SigningMethodRSA:
+			return decodePem(key)
+		case *jwt.SigningMethodECDSA:
+			return decodePem(key)
+		case *jwt.SigningMethodRSAPSS:
+			return decodePem(key)
+		default:
+			return nil, errors.New("unknown signing method")
+		}
+
 	})
 
 	return err
+}
+
+func decodePem(pemString string) (interface{}, error) {
+	block, _ := pem.Decode([]byte(pemString))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the public key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, errors.New("failed to parse DER encoded public key: " + err.Error())
+	}
+	return pub, nil
 }
 
 func CreateJwt() Jwt {
