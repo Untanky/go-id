@@ -43,7 +43,7 @@ func (suite *JwtTestSuite) TestJwtHeader_ErrorWhenNonBase64Encoded() {
 }
 
 func (suite *JwtTestSuite) TestJwtHeader_ErrorWhenInvalidJsonEncoded() {
-	invalidJsonToken := Jwt("ewogICJhbGciOiAiUlMyNTYiLAogICJ0eXAiOiAiSldUCn0=..")
+	invalidJsonToken := Jwt("ewogICJhbGciOiAiUlMyNTYiLAogICJ0eXAiOiAiSldUCn0..")
 
 	header, err := invalidJsonToken.Header()
 	assert.ErrorContains(suite.T(), err, "cannot unmarschal json")
@@ -51,7 +51,7 @@ func (suite *JwtTestSuite) TestJwtHeader_ErrorWhenInvalidJsonEncoded() {
 }
 
 func (suite *JwtTestSuite) TestJwtHeader_ErrorWhenHeaderFieldMissing() {
-	invalidJsonToken := Jwt("ewogICJhbGciOiAiUlMyNTYiLAogICJ0eXBlIjogIkpXVCIKfQ==..")
+	invalidJsonToken := Jwt("ewogICJhbGciOiAiUlMyNTYiLAogICJ0eXBlIjogIkpXVCIKfQ..")
 
 	header, err := invalidJsonToken.Header()
 	assert.ErrorContains(suite.T(), err, "invalid header")
@@ -59,7 +59,7 @@ func (suite *JwtTestSuite) TestJwtHeader_ErrorWhenHeaderFieldMissing() {
 }
 
 func (suite *JwtTestSuite) TestJwtPayload_PayloadHasHelloWorld() {
-	token := Jwt(".ewogICJoZWxsbyI6ICJ3b3JsZCIKfQ==.")
+	token := Jwt(".ewogICJoZWxsbyI6ICJ3b3JsZCIKfQ.")
 
 	payload, err := token.Payload()
 	assert.Nil(suite.T(), err)
@@ -68,7 +68,7 @@ func (suite *JwtTestSuite) TestJwtPayload_PayloadHasHelloWorld() {
 }
 
 func (suite *JwtTestSuite) TestJwtPayload_ErrorWhenNonBase64Encoded() {
-	invalidBase64Token := Jwt(".ewogICJoZWxsbyI6$ICJ3b3JsZCIKfQ==.")
+	invalidBase64Token := Jwt(".ewogICJoZWxsbyI6$ICJ3b3JsZCIKfQ.")
 
 	header, err := invalidBase64Token.Payload()
 	assert.ErrorContains(suite.T(), err, "cannot convert from base64")
@@ -83,6 +83,14 @@ func (suite *JwtTestSuite) TestJwtPayload_ErrorWhenInvalidJsonEncoded() {
 	assert.NotNil(suite.T(), header)
 }
 
+func (suite *JwtTestSuite) TestJwtPayload_ValidateInHS256Format() {
+	key := "secret"
+	hs256Token := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M")
+
+	err := hs256Token.Validate(key)
+	assert.Nil(suite.T(), err)
+}
+
 func (suite *JwtTestSuite) TestCreateJwt() {
 	token := CreateJwt()
 
@@ -93,7 +101,7 @@ func (suite *JwtTestSuite) TestCreateJwt() {
 	assert.Equal(suite.T(), "HS256", header.Alg)
 	assert.Equal(suite.T(), "JWT", header.Typ)
 	assert.Equal(suite.T(), make(map[string]interface{}), map[string]interface{}(payload))
-	assert.Nil(suite.T(), token.Validate("key"))
+	assert.Nil(suite.T(), token.Validate("secret"))
 }
 
 func TestJwtService(t *testing.T) {

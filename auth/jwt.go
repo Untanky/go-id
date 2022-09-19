@@ -5,7 +5,24 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v4"
 )
+
+func readBase64Json(base64Json string) (map[string]interface{}, error) {
+	utf8Json, err := base64.RawStdEncoding.DecodeString(base64Json)
+	if err != nil {
+		return map[string]interface{}{}, errors.New("cannot convert from base64")
+	}
+
+	var object map[string]interface{}
+	err = json.Unmarshal(utf8Json, &object)
+	if err != nil {
+		return map[string]interface{}{}, errors.New("cannot unmarschal json")
+	}
+
+	return object, nil
+}
 
 type Jwt string
 
@@ -35,21 +52,6 @@ func (jwt *Jwt) Header() (header, error) {
 	}, nil
 }
 
-func readBase64Json(base64Json string) (map[string]interface{}, error) {
-	utf8Json, err := base64.StdEncoding.DecodeString(base64Json)
-	if err != nil {
-		return map[string]interface{}{}, errors.New("cannot convert from base64")
-	}
-
-	var object map[string]interface{}
-	err = json.Unmarshal(utf8Json, &object)
-	if err != nil {
-		return map[string]interface{}{}, errors.New("cannot unmarschal json")
-	}
-
-	return object, nil
-}
-
 func (jwt *Jwt) Payload() (payload, error) {
 	splitJwt := strings.SplitN(string(*jwt), ".", 3)
 	payloadMap, err := readBase64Json(splitJwt[1])
@@ -60,10 +62,14 @@ func (jwt *Jwt) Payload() (payload, error) {
 	return payload(payloadMap), nil
 }
 
-func (jwt *Jwt) Validate(key string) error {
-	return nil
+func (token *Jwt) Validate(key string) error {
+	_, err := jwt.Parse(string(*token), func(t *jwt.Token) (interface{}, error) {
+		return []byte(key), nil
+	})
+
+	return err
 }
 
 func CreateJwt() Jwt {
-	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30=."
+	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M"
 }
