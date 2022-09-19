@@ -35,7 +35,7 @@ func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	tokenString, err := suite.service.Create(payload)
 	assert.Nil(suite.T(), err)
 
-	splitToken := strings.SplitN(tokenString, ".", 3)
+	splitToken := strings.SplitN(string(tokenString), ".", 3)
 	payloadString, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(splitToken[1])
 	err = json.Unmarshal(payloadString, &payload)
 
@@ -52,7 +52,7 @@ func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 }
 
 func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecret() {
-	fakeTokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.-Msx6dR3kerkZ8g0jyJgpZ1oki3Z-lWmbifP42m-eGg"
+	fakeTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.-Msx6dR3kerkZ8g0jyJgpZ1oki3Z-lWmbifP42m-eGg")
 
 	payload, err := suite.service.Validate(fakeTokenString)
 
@@ -61,7 +61,7 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecr
 }
 
 func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired() {
-	expiredTokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.UoWNJ5MjP4013Wll-m8WeLu2MR6pczHD2usf_A58Yww"
+	expiredTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.UoWNJ5MjP4013Wll-m8WeLu2MR6pczHD2usf_A58Yww")
 
 	payload, err := suite.service.Validate(expiredTokenString)
 
@@ -70,7 +70,7 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired()
 }
 
 func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
-	futureTokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.eMy2GxxPi1MXxz46u_aJ24Bb4N-RDdHjqc_kPDwn8Nw"
+	futureTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.eMy2GxxPi1MXxz46u_aJ24Bb4N-RDdHjqc_kPDwn8Nw")
 
 	payload, err := suite.service.Validate(futureTokenString)
 

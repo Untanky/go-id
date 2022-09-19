@@ -1,48 +1,39 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
 	. "github.com/Untanky/go-id/src"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 type TokenService[Payload any] interface {
-	Create(payload Payload) (string, error)
-	Validate(token string) (Payload, error)
+	Create(payload Payload) (Jwt, error)
+	Validate(token Jwt) (Payload, error)
 }
 
 type RefreshTokenService struct {
 	Secret Secret
 }
 
-func (service *RefreshTokenService) Create(payload map[string]interface{}) (string, error) {
+func (service *RefreshTokenService) Create(payload map[string]interface{}) (Jwt, error) {
 	payload["iat"] = time.Now().Unix()
 	payload["exp"] = time.Now().AddDate(1, 0, 0).Unix()
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(payload))
-	tokenString, err := token.SignedString(service.Secret.GetSecret())
+	token, err := CreateJwt(HS512, payload, string(service.Secret.GetSecret()))
 
-	return string(tokenString), err
+	return token, err
 }
 
-func (service *RefreshTokenService) Validate(tokenString string) (map[string]interface{}, error) {
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-
-		return service.Secret.GetSecret(), nil
-	})
-
+func (service *RefreshTokenService) Validate(token Jwt) (map[string]interface{}, error) {
+	payload, err := token.Payload()
 	if err != nil {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return map[string]interface{}(claims), nil
-	} else {
-		return nil, errors.New("invalid token")
+	err = token.Validate(string(service.Secret.GetSecret()))
+	if err != nil {
+		return nil, err
 	}
+
+	return payload, nil
 }
