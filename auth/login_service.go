@@ -1,22 +1,28 @@
-package goid
+package auth
 
 import (
 	"errors"
 	"strings"
+
+	. "github.com/Untanky/go-id/src"
 )
 
 type LoginService struct {
-	userRepo UserRepository
+	userRepo  UserRepository
+	encrypter Encrypter
 }
 
-func (service *LoginService) Init(userRepo UserRepository) {
+func (service *LoginService) Init(userRepo UserRepository, encrypter Encrypter) {
 	service.userRepo = userRepo
+	service.encrypter = encrypter
 }
 
 func (service *LoginService) Register(user *User) error {
 	if err := service.validatePasskey(user.Passkey); err != nil {
 		return err
 	}
+
+	user.Passkey = string(service.encrypter.Encrypt([]byte(user.Passkey), []byte("salt")))
 
 	if user, _ := service.userRepo.FindByIdentifier(user.Identifier); user != nil {
 		return errors.New("Identifier already exists")
@@ -52,7 +58,7 @@ func (service *LoginService) validatePasskey(passkey string) error {
 }
 
 func (service *LoginService) Login(identifier string, passkey string) (*User, error) {
-	user, foundErr := service.userRepo.FindByIdentifierAndPasskey(identifier, passkey)
+	user, foundErr := service.userRepo.FindByIdentifier(identifier)
 
 	if foundErr != nil {
 		return nil, errors.New("unauthorized")
@@ -60,7 +66,14 @@ func (service *LoginService) Login(identifier string, passkey string) (*User, er
 
 	if user.Status == Inactive {
 		return nil, errors.New("user is inactive")
-	} else {
-		return user, nil
 	}
+
+	salt := service.encrypter.RetrieveSalt([]byte(user.Passkey))
+	encrptedPasskey := string(service.encrypter.Encrypt([]byte(passkey), salt))
+
+	if encrptedPasskey != user.Passkey {
+		return nil, errors.New("unauthorized")
+	}
+
+	return user, nil
 }
