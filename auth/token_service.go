@@ -2,8 +2,6 @@ package auth
 
 import (
 	"time"
-
-	. "github.com/Untanky/go-id/src"
 )
 
 type TokenService[Payload any] interface {
@@ -12,14 +10,18 @@ type TokenService[Payload any] interface {
 }
 
 type RefreshTokenService struct {
-	Secret Secret
+	jwtService *JwtService
+}
+
+func (service *RefreshTokenService) Init(jwtService *JwtService) {
+	service.jwtService = jwtService
 }
 
 func (service *RefreshTokenService) Create(payload map[string]interface{}) (Jwt, error) {
 	payload["iat"] = time.Now().Unix()
 	payload["exp"] = time.Now().AddDate(1, 0, 0).Unix()
 
-	token, err := CreateJwt(HS512, payload, string(service.Secret.GetSecret()))
+	token, err := service.jwtService.Create(payload)
 
 	return token, err
 }
@@ -30,7 +32,7 @@ func (service *RefreshTokenService) Validate(token Jwt) (map[string]interface{},
 		return nil, err
 	}
 
-	err = token.Validate(string(service.Secret.GetSecret()))
+	err = token.Validate(string(service.jwtService.secret.GetSecret()))
 	if err != nil {
 		return nil, err
 	}
