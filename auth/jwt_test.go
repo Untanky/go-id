@@ -216,6 +216,6 @@ mwIDAQAB
 	assert.Nil(suite.T(), token.Validate(publicKey))
 }
 
-func TestJwtService(t *testing.T) {
+func TestJwt(t *testing.T) {
 	suite.Run(t, new(JwtTestSuite))
 }
