@@ -17,7 +17,7 @@ func (suite *SecretTestSuite) SetupTest() {
 
 func (suite *SecretTestSuite) TestGetSecret() {
 	value := []byte("secret_value")
-	secret := NewSecretValue(value).(Secret)
+	secret := NewSecretValue(value).(Secret[[]byte])
 
 	assert.NotNil(suite.T(), secret)
 	assert.Equal(suite.T(), value, secret.GetSecret())
