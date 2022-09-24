@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/Untanky/go-id/auth"
+	goid "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,7 +17,7 @@ func (suite *JwtServiceTestSuite) SetupTest() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
-	key := "secret"
+	key := goid.NewSecretValue([]byte("secret"))
 	jwtService := new(JwtService)
 	jwtService.Init(HS256, key)
 	data := map[string]interface{}{
@@ -32,12 +33,12 @@ func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 	assert.Equal(suite.T(), "HS256", header.Alg)
 	assert.Nil(suite.T(), payloadErr)
 	assert.Equal(suite.T(), data, map[string]interface{}(payload))
-	assert.Nil(suite.T(), token.Validate(key))
+	assert.Nil(suite.T(), token.Validate(string(key.GetSecret())))
 	assert.Nil(suite.T(), err)
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateRS256Token() {
-	privateKey := `
+	privateKey := goid.NewSecretValue([]byte(`
 -----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC7VJTUt9Us8cKj
 MzEfYyjiWA4R4/M2bS1GB4t7NXp98C3SC6dVMvDuictGeurT8jNbvJZHtCSuYEvu
@@ -65,7 +66,7 @@ et6INsK0oG8XVGXSpQvQh3RUYekCZQkBBFcpqWpbIEsCgYAnM3DQf3FJoSnXaMhr
 VBIovic5l0xFkEHskAjFTevO86Fsz1C2aSeRKSqGFoOQ0tmJzBEs1R6KqnHInicD
 TQrKhArgLXX4v3CddjfTRJkFWDbE/CkvKZNOrcf1nhaGCPspRJj2KUkj1Fhl9Cnc
 dn/RsYEONbwQSjIfMPkvxF+8HQ==
------END PRIVATE KEY-----`
+-----END PRIVATE KEY-----`))
 	publicKey := `
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo
