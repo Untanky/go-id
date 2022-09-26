@@ -15,7 +15,7 @@ import (
 
 type RefreshTokenTestSuite struct {
 	suite.Suite
-	service TokenService[map[string]interface{}]
+	service TokenService[*RefreshTokenPayload]
 }
 
 func (suite *RefreshTokenTestSuite) SetupTest() {
@@ -32,9 +32,9 @@ func (suite *RefreshTokenTestSuite) SetupTest() {
 func (suite *RefreshTokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	sub := "123"
 	sid := "abc"
-	payload := map[string]interface{}{
-		"sub": sub,
-		"sid": sid,
+	payload := &RefreshTokenPayload{
+		Sid: sid,
+		Sub: sub,
 	}
 
 	tokenString, err := suite.service.Create(payload)
@@ -45,10 +45,10 @@ func (suite *RefreshTokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	err = json.Unmarshal(payloadString, &payload)
 
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), sid, payload["sid"])
-	assert.Equal(suite.T(), sub, payload["sub"])
-	assert.Equal(suite.T(), float64(time.Now().Unix()), payload["iat"])
-	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payload["exp"])
+	assert.Equal(suite.T(), sid, payload.Sid)
+	assert.Equal(suite.T(), sub, payload.Sub)
+	assert.Equal(suite.T(), float64(time.Now().Unix()), payload.Iat)
+	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payload.Exp)
 
 	validatedPayload, err := suite.service.Validate(tokenString)
 

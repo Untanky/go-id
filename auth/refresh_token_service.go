@@ -4,6 +4,13 @@ import (
 	"time"
 )
 
+type RefreshTokenPayload struct {
+	Sid string
+	Sub string
+	Iat float64
+	Exp float64
+}
+
 type RefreshTokenService struct {
 	jwtService *JwtService
 }
@@ -12,16 +19,19 @@ func (service *RefreshTokenService) Init(jwtService *JwtService) {
 	service.jwtService = jwtService
 }
 
-func (service *RefreshTokenService) Create(payload map[string]interface{}) (Jwt, error) {
-	payload["iat"] = time.Now().Unix()
-	payload["exp"] = time.Now().AddDate(1, 0, 0).Unix()
+func (service *RefreshTokenService) Create(payload *RefreshTokenPayload) (Jwt, error) {
+	payloadMap := make(map[string]interface{})
+	payloadMap["sid"] = payload.Sid
+	payloadMap["sub"] = payload.Sub
+	payloadMap["iat"] = time.Now().Unix()
+	payloadMap["exp"] = time.Now().AddDate(1, 0, 0).Unix()
 
-	token, err := service.jwtService.Create(payload)
+	token, err := service.jwtService.Create(payloadMap)
 
 	return token, err
 }
 
-func (service *RefreshTokenService) Validate(token Jwt) (map[string]interface{}, error) {
+func (service *RefreshTokenService) Validate(token Jwt) (*RefreshTokenPayload, error) {
 	payload, err := token.Payload()
 	if err != nil {
 		return nil, err
@@ -32,5 +42,10 @@ func (service *RefreshTokenService) Validate(token Jwt) (map[string]interface{},
 		return nil, err
 	}
 
-	return payload, nil
+	return &RefreshTokenPayload{
+		Sid: payload["sid"].(string),
+		Sub: payload["sub"].(string),
+		Iat: payload["iat"].(float64),
+		Exp: payload["exp"].(float64),
+	}, nil
 }
