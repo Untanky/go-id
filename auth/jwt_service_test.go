@@ -18,7 +18,7 @@ func (suite *JwtServiceTestSuite) SetupTest() {
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 	key := goid.NewSecretValue("secret")
-	jwtService := new(JwtService)
+	jwtService := new(JwtService[goid.SecretString])
 	jwtService.Init(HS256, key)
 	data := map[string]interface{}{
 		"foo":   "bar",
@@ -38,11 +38,13 @@ func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateRS256Token() {
-	privateKey := goid.NewSecretValue(rsaPrivateKey)
-	publicKey := rsaPublicKey
+	keyPair := goid.NewSecretPair(goid.KeyPair{
+		PrivateKey: rsaPrivateKey,
+		PublicKey:  rsaPublicKey,
+	})
 
-	jwtService := new(JwtService)
-	jwtService.Init(RS256, privateKey)
+	jwtService := new(JwtService[goid.KeyPair])
+	jwtService.Init(RS256, keyPair)
 	data := map[string]interface{}{
 		"foo":   "bar",
 		"hello": "world",
@@ -56,7 +58,7 @@ func (suite *JwtServiceTestSuite) TestJwtCreate_CreateRS256Token() {
 	assert.Equal(suite.T(), "RS256", header.Alg)
 	assert.Nil(suite.T(), payloadErr)
 	assert.Equal(suite.T(), data, map[string]interface{}(payload))
-	assert.Nil(suite.T(), token.Validate(publicKey))
+	assert.Nil(suite.T(), token.Validate(string(keyPair.GetSecret().PublicKey)))
 	assert.Nil(suite.T(), err)
 }
 

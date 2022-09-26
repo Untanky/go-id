@@ -1,19 +1,33 @@
 package auth
 
 import (
+	"errors"
+
 	goid "github.com/Untanky/go-id/src"
 )
 
-type JwtService struct {
-	method signingMethod
-	secret goid.Secret[goid.SecretString]
+type secret interface {
+	goid.SecretString | goid.KeyPair
 }
 
-func (service *JwtService) Init(method signingMethod, secret goid.Secret[goid.SecretString]) {
+type JwtService[Type secret] struct {
+	method signingMethod
+	secret goid.Secret[Type]
+}
+
+func (service *JwtService[Type]) Init(method signingMethod, secret goid.Secret[Type]) {
 	service.method = method
 	service.secret = secret
 }
 
-func (service *JwtService) Create(data map[string]interface{}) (Jwt, error) {
-	return CreateJwt(service.method, data, string(service.secret.GetSecret()))
+func (service *JwtService[Type]) Create(data map[string]interface{}) (Jwt, error) {
+	if str, ok := any(service.secret.GetSecret()).(goid.SecretString); ok == true {
+		return CreateJwt(service.method, data, string(str))
+	}
+
+	if pair, ok := any(service.secret.GetSecret()).(goid.KeyPair); ok == true {
+		return CreateJwt(service.method, data, string(pair.PrivateKey))
+	}
+
+	return Jwt(""), errors.New("unknown secret type")
 }

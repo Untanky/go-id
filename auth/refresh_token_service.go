@@ -2,6 +2,8 @@ package auth
 
 import (
 	"time"
+
+	goid "github.com/Untanky/go-id/src"
 )
 
 type RefreshTokenPayload struct {
@@ -12,10 +14,10 @@ type RefreshTokenPayload struct {
 }
 
 type RefreshTokenService struct {
-	jwtService *JwtService
+	jwtService *JwtService[goid.SecretString]
 }
 
-func (service *RefreshTokenService) Init(jwtService *JwtService) {
+func (service *RefreshTokenService) Init(jwtService *JwtService[goid.SecretString]) {
 	service.jwtService = jwtService
 }
 
