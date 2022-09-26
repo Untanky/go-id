@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type TokenTestSuite struct {
+type RefreshTokenTestSuite struct {
 	suite.Suite
 	service TokenService[map[string]interface{}]
 }
 
-func (suite *TokenTestSuite) SetupTest() {
+func (suite *RefreshTokenTestSuite) SetupTest() {
 	secret := NewSecretValue([]byte("key"))
 
 	jwtService := new(JwtService)
@@ -29,7 +29,7 @@ func (suite *TokenTestSuite) SetupTest() {
 	suite.service = refreshToken
 }
 
-func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
+func (suite *RefreshTokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	sub := "123"
 	sid := "abc"
 	payload := map[string]interface{}{
@@ -56,7 +56,7 @@ func (suite *TokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	assert.Nil(suite.T(), err)
 }
 
-func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecret() {
+func (suite *RefreshTokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecret() {
 	fakeTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.-Msx6dR3kerkZ8g0jyJgpZ1oki3Z-lWmbifP42m-eGg")
 
 	payload, err := suite.service.Validate(fakeTokenString)
@@ -65,7 +65,7 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecr
 	assert.ErrorContains(suite.T(), err, "signature")
 }
 
-func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired() {
+func (suite *RefreshTokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired() {
 	expiredTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.UoWNJ5MjP4013Wll-m8WeLu2MR6pczHD2usf_A58Yww")
 
 	payload, err := suite.service.Validate(expiredTokenString)
@@ -74,7 +74,7 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItExpired()
 	assert.ErrorContains(suite.T(), err, "expired")
 }
 
-func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
+func (suite *RefreshTokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
 	futureTokenString := Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.eMy2GxxPi1MXxz46u_aJ24Bb4N-RDdHjqc_kPDwn8Nw")
 
 	payload, err := suite.service.Validate(futureTokenString)
@@ -84,5 +84,5 @@ func (suite *TokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWasIssued
 }
 
 func TestTokenService(t *testing.T) {
-	suite.Run(t, new(TokenTestSuite))
+	suite.Run(t, new(RefreshTokenTestSuite))
 }
