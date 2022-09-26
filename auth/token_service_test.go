@@ -1,9 +1,6 @@
 package auth_test
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	"strings"
 	"testing"
 	"time"
 
@@ -40,19 +37,20 @@ func (suite *RefreshTokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 	tokenString, err := suite.service.Create(payload)
 	assert.Nil(suite.T(), err)
 
-	splitToken := strings.SplitN(string(tokenString), ".", 3)
-	payloadString, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(splitToken[1])
-	err = json.Unmarshal(payloadString, &payload)
+	payloadMap, err := tokenString.Payload()
 
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), sid, payload.Sid)
-	assert.Equal(suite.T(), sub, payload.Sub)
-	assert.Equal(suite.T(), float64(time.Now().Unix()), payload.Iat)
-	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payload.Exp)
+	assert.Equal(suite.T(), sid, payloadMap["sid"])
+	assert.Equal(suite.T(), sub, payloadMap["sub"])
+	assert.Equal(suite.T(), float64(time.Now().Unix()), payloadMap["iat"])
+	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payloadMap["exp"])
 
 	validatedPayload, err := suite.service.Validate(tokenString)
 
-	assert.Equal(suite.T(), payload, validatedPayload)
+	assert.Equal(suite.T(), payload.Sid, validatedPayload.Sid)
+	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
+	assert.Equal(suite.T(), float64(time.Now().Unix()), validatedPayload.Iat)
+	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), validatedPayload.Exp)
 	assert.Nil(suite.T(), err)
 }
 
@@ -103,6 +101,29 @@ func (suite *AccessTokenTestSuite) SetupTest() {
 }
 
 func (suite *AccessTokenTestSuite) TestAccessToken_DoNothing() {
+	sub := "123"
+	sid := "abc"
+	payload := &RefreshTokenPayload{
+		Sid: sid,
+		Sub: sub,
+	}
+
+	token, err := suite.service.Create(payload)
+	assert.Nil(suite.T(), err)
+
+	payloadMap, err := token.Payload()
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), sid, payloadMap["sid"])
+	assert.Equal(suite.T(), sub, payloadMap["sub"])
+	assert.Equal(suite.T(), float64(time.Now().Unix()), payloadMap["iat"])
+	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payloadMap["exp"])
+
+	validatedPayload, err := suite.service.Validate(token)
+	assert.Equal(suite.T(), payload.Sid, validatedPayload.Sid)
+	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
+	assert.Equal(suite.T(), float64(time.Now().Unix()), validatedPayload.Iat)
+	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), validatedPayload.Exp)
+	assert.Nil(suite.T(), err)
 }
 
 func TestTokenService(t *testing.T) {
