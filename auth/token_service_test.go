@@ -83,6 +83,28 @@ func (suite *RefreshTokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseItWa
 	assert.ErrorContains(suite.T(), err, "before issued")
 }
 
+type AccessTokenTestSuite struct {
+	suite.Suite
+	service *AccessTokenService
+}
+
+func (suite *AccessTokenTestSuite) SetupTest() {
+	secret := NewSecretPair(KeyPair{
+		PrivateKey: rsaPrivateKey,
+		PublicKey:  rsaPublicKey,
+	})
+
+	jwtService := new(JwtService[KeyPair])
+	jwtService.Init(RS256, secret)
+
+	accessToken := new(AccessTokenService)
+	accessToken.Init(jwtService)
+	suite.service = accessToken
+}
+
+func (suite *AccessTokenTestSuite) TestAccessToken_DoNothing() {
+}
+
 func TestTokenService(t *testing.T) {
 	suite.Run(t, new(RefreshTokenTestSuite))
 }
