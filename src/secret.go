@@ -23,6 +23,21 @@ func (secret *StringSecret) GetSecret() SecretString {
 	return secret.value
 }
 
+type PairSecret struct {
+	value KeyPair
+}
+
+func NewSecretPair(value KeyPair) Secret[KeyPair] {
+	return &PairSecret{value: KeyPair{
+		PrivateKey: value.PrivateKey,
+		PublicKey:  value.PublicKey,
+	}}
+}
+
+func (secret *PairSecret) GetSecret() KeyPair {
+	return secret.value
+}
+
 type RotatingSecret[Type SecretString | KeyPair] struct {
 	currentSecret Secret[Type]
 }

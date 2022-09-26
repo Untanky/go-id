@@ -15,7 +15,7 @@ type SecretTestSuite struct {
 func (suite *SecretTestSuite) SetupTest() {
 }
 
-func (suite *SecretTestSuite) TestGetSecret() {
+func (suite *SecretTestSuite) TestStringSecret_GetSecret() {
 	value := "secret_value"
 	secret := NewSecretValue(value)
 
@@ -23,8 +23,15 @@ func (suite *SecretTestSuite) TestGetSecret() {
 	assert.Equal(suite.T(), value, string(secret.GetSecret()))
 }
 
-func TestTokenService(t *testing.T) {
-	suite.Run(t, new(SecretTestSuite))
+func (suite *SecretTestSuite) TestPairSecret_GetSecret() {
+	value := KeyPair{
+		PrivateKey: "private",
+		PublicKey:  "public",
+	}
+	secret := NewSecretPair(value)
+
+	assert.NotNil(suite.T(), secret)
+	assert.Equal(suite.T(), value, secret.GetSecret())
 }
 
 func (suite *SecretTestSuite) TestRotateSecret() {
@@ -41,4 +48,8 @@ func (suite *SecretTestSuite) TestRotateSecret() {
 	actual = secret.GetSecret()
 	assert.NotEqual(suite.T(), value, actual)
 	assert.Equal(suite.T(), nextValue, string(actual))
+}
+
+func TestSecrets(t *testing.T) {
+	suite.Run(t, new(SecretTestSuite))
 }
