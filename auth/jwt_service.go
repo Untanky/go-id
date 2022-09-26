@@ -6,10 +6,10 @@ import (
 
 type JwtService struct {
 	method signingMethod
-	secret goid.Secret[[]byte]
+	secret goid.Secret[goid.SecretString]
 }
 
-func (service *JwtService) Init(method signingMethod, secret goid.Secret[[]byte]) {
+func (service *JwtService) Init(method signingMethod, secret goid.Secret[goid.SecretString]) {
 	service.method = method
 	service.secret = secret
 }

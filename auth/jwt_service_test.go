@@ -17,7 +17,7 @@ func (suite *JwtServiceTestSuite) SetupTest() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
-	key := goid.NewSecretValue([]byte("secret"))
+	key := goid.NewSecretValue("secret")
 	jwtService := new(JwtService)
 	jwtService.Init(HS256, key)
 	data := map[string]interface{}{
@@ -38,7 +38,7 @@ func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateRS256Token() {
-	privateKey := goid.NewSecretValue([]byte(rsaPrivateKey))
+	privateKey := goid.NewSecretValue(rsaPrivateKey)
 	publicKey := rsaPublicKey
 
 	jwtService := new(JwtService)

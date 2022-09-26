@@ -19,7 +19,7 @@ type RefreshTokenTestSuite struct {
 }
 
 func (suite *RefreshTokenTestSuite) SetupTest() {
-	secret := NewSecretValue([]byte("key"))
+	secret := NewSecretValue("key")
 
 	jwtService := new(JwtService)
 	jwtService.Init(HS256, secret)
