@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	. "github.com/Untanky/go-id/auth"
-	. "github.com/Untanky/go-id/src"
+	. "github.com/Untanky/go-id/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

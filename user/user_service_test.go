@@ -1,9 +1,9 @@
-package goid_test
+package user_test
 
 import (
 	"testing"
 
-	. "github.com/Untanky/go-id/src"
+	. "github.com/Untanky/go-id/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

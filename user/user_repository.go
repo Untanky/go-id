@@ -1,4 +1,4 @@
-package goid
+package user
 
 type UserRepository interface {
 	FindByIdentifier(identifier string) (*User, error)
