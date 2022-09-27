@@ -7,7 +7,11 @@ type KeyPair struct {
 	PublicKey  SecretString
 }
 
-type Secret[Type SecretString | KeyPair] interface {
+type SecretType interface {
+	SecretString | KeyPair
+}
+
+type Secret[Type SecretType] interface {
 	GetSecret() Type
 }
 
@@ -38,11 +42,11 @@ func (secret *PairSecret) GetSecret() KeyPair {
 	return secret.value
 }
 
-type RotatingSecret[Type SecretString | KeyPair] struct {
+type RotatingSecret[Type SecretType] struct {
 	currentSecret Secret[Type]
 }
 
-func NewRotatingSecret[Type SecretString | KeyPair](secret Secret[Type]) *RotatingSecret[Type] {
+func NewRotatingSecret[Type SecretType](secret Secret[Type]) *RotatingSecret[Type] {
 	return &RotatingSecret[Type]{currentSecret: secret}
 }
 

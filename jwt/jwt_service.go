@@ -6,7 +6,7 @@ import (
 	. "github.com/Untanky/go-id/secret"
 )
 
-type JwtService[Type SecretString | KeyPair] struct {
+type JwtService[Type SecretType] struct {
 	method signingMethod
 	Secret Secret[Type]
 }
