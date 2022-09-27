@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "github.com/Untanky/go-id/jwt"
-	goid "github.com/Untanky/go-id/src"
+	. "github.com/Untanky/go-id/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,8 +17,8 @@ func (suite *JwtServiceTestSuite) SetupTest() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
-	key := goid.NewSecretValue("secret")
-	jwtService := new(JwtService[goid.SecretString])
+	key := NewSecretValue("secret")
+	jwtService := new(JwtService[SecretString])
 	jwtService.Init(HS256, key)
 	data := map[string]interface{}{
 		"foo":   "bar",
@@ -38,12 +38,12 @@ func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 }
 
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateRS256Token() {
-	keyPair := goid.NewSecretPair(goid.KeyPair{
+	keyPair := NewSecretPair(KeyPair{
 		PrivateKey: rsaPrivateKey,
 		PublicKey:  rsaPublicKey,
 	})
 
-	jwtService := new(JwtService[goid.KeyPair])
+	jwtService := new(JwtService[KeyPair])
 	jwtService.Init(RS256, keyPair)
 	data := map[string]interface{}{
 		"foo":   "bar",

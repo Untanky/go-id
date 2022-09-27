@@ -6,7 +6,7 @@ import (
 
 	. "github.com/Untanky/go-id/auth"
 	jwt "github.com/Untanky/go-id/jwt"
-	. "github.com/Untanky/go-id/src"
+	. "github.com/Untanky/go-id/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

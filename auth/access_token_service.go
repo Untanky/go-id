@@ -4,14 +4,14 @@ import (
 	"time"
 
 	jwt "github.com/Untanky/go-id/jwt"
-	goid "github.com/Untanky/go-id/src"
+	secret "github.com/Untanky/go-id/secret"
 )
 
 type AccessTokenService struct {
-	jwtService *jwt.JwtService[goid.KeyPair]
+	jwtService *jwt.JwtService[secret.KeyPair]
 }
 
-func (service *AccessTokenService) Init(jwtService *jwt.JwtService[goid.KeyPair]) {
+func (service *AccessTokenService) Init(jwtService *jwt.JwtService[secret.KeyPair]) {
 	service.jwtService = jwtService
 }
 

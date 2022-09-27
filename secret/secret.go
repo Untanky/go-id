@@ -1,4 +1,4 @@
-package goid
+package secret
 
 type SecretString string
 
