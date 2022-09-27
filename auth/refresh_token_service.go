@@ -3,6 +3,7 @@ package auth
 import (
 	"time"
 
+	jwt "github.com/Untanky/go-id/jwt"
 	goid "github.com/Untanky/go-id/src"
 )
 
@@ -14,14 +15,14 @@ type RefreshTokenPayload struct {
 }
 
 type RefreshTokenService struct {
-	jwtService *JwtService[goid.SecretString]
+	jwtService *jwt.JwtService[goid.SecretString]
 }
 
-func (service *RefreshTokenService) Init(jwtService *JwtService[goid.SecretString]) {
+func (service *RefreshTokenService) Init(jwtService *jwt.JwtService[goid.SecretString]) {
 	service.jwtService = jwtService
 }
 
-func (service *RefreshTokenService) Create(payload *RefreshTokenPayload) (Jwt, error) {
+func (service *RefreshTokenService) Create(payload *RefreshTokenPayload) (jwt.Jwt, error) {
 	payloadMap := make(map[string]interface{})
 	payloadMap["sid"] = payload.Sid
 	payloadMap["sub"] = payload.Sub
@@ -33,13 +34,13 @@ func (service *RefreshTokenService) Create(payload *RefreshTokenPayload) (Jwt, e
 	return token, err
 }
 
-func (service *RefreshTokenService) Validate(token Jwt) (*RefreshTokenPayload, error) {
+func (service *RefreshTokenService) Validate(token jwt.Jwt) (*RefreshTokenPayload, error) {
 	payload, err := token.Payload()
 	if err != nil {
 		return nil, err
 	}
 
-	err = token.Validate(string(service.jwtService.secret.GetSecret()))
+	err = token.Validate(string(service.jwtService.Secret.GetSecret()))
 	if err != nil {
 		return nil, err
 	}

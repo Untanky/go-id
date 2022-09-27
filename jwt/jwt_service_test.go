@@ -3,7 +3,7 @@ package auth_test
 import (
 	"testing"
 
-	. "github.com/Untanky/go-id/auth"
+	. "github.com/Untanky/go-id/jwt"
 	goid "github.com/Untanky/go-id/src"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

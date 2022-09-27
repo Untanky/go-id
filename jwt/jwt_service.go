@@ -12,20 +12,20 @@ type secret interface {
 
 type JwtService[Type secret] struct {
 	method signingMethod
-	secret goid.Secret[Type]
+	Secret goid.Secret[Type]
 }
 
 func (service *JwtService[Type]) Init(method signingMethod, secret goid.Secret[Type]) {
 	service.method = method
-	service.secret = secret
+	service.Secret = secret
 }
 
 func (service *JwtService[Type]) Create(data map[string]interface{}) (Jwt, error) {
-	if str, ok := any(service.secret.GetSecret()).(goid.SecretString); ok == true {
+	if str, ok := any(service.Secret.GetSecret()).(goid.SecretString); ok == true {
 		return CreateJwt(service.method, data, string(str))
 	}
 
-	if pair, ok := any(service.secret.GetSecret()).(goid.KeyPair); ok == true {
+	if pair, ok := any(service.Secret.GetSecret()).(goid.KeyPair); ok == true {
 		return CreateJwt(service.method, data, string(pair.PrivateKey))
 	}
 
