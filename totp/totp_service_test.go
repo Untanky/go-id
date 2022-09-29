@@ -56,6 +56,53 @@ func (suite *TotpServiceTestSuite) TestGenerateOtp_ForEmailChallenge() {
 	assert.Equal(suite.T(), "328482", otp)
 }
 
+func (suite *TotpServiceTestSuite) TestValidateOtp_ForMfaChallenge() {
+	challenge := totp.Challenge{
+		ChallengeType: totp.MFA_CHALLENGE,
+		Secret:        suite.secret,
+	}
+	incorrectOtp := "000000"
+	correctOtp := suite.service.GenerateOtp(challenge)
+
+	notOk := suite.service.ValidateOtp(incorrectOtp, challenge)
+	ok := suite.service.ValidateOtp(correctOtp, challenge)
+
+	assert.True(suite.T(), ok)
+	assert.False(suite.T(), notOk)
+}
+
+func (suite *TotpServiceTestSuite) TestValidateOtp_ForSmsChallenge() {
+	challenge := totp.Challenge{
+		ChallengeType: totp.SMS_CHALLENGE,
+		Secret:        suite.secret,
+		Event:         0,
+	}
+	incorrectOtp := "000000"
+	correctOtp := "328482"
+
+	notOk := suite.service.ValidateOtp(incorrectOtp, challenge)
+	ok := suite.service.ValidateOtp(correctOtp, challenge)
+
+	assert.True(suite.T(), ok)
+	assert.False(suite.T(), notOk)
+}
+
+func (suite *TotpServiceTestSuite) TestValidateOtp_ForEmailChallenge() {
+	challenge := totp.Challenge{
+		ChallengeType: totp.EMAIL_CHALLENGE,
+		Secret:        suite.secret,
+		Event:         0,
+	}
+	incorrectOtp := "000000"
+	correctOtp := "328482"
+
+	notOk := suite.service.ValidateOtp(incorrectOtp, challenge)
+	ok := suite.service.ValidateOtp(correctOtp, challenge)
+
+	assert.True(suite.T(), ok)
+	assert.False(suite.T(), notOk)
+}
+
 func TestTotpService(t *testing.T) {
 	suite.Run(t, new(TotpServiceTestSuite))
 }

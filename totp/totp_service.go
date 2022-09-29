@@ -31,8 +31,13 @@ func (service *OtpService) GenerateOtp(challenge Challenge) string {
 	case EMAIL_CHALLENGE:
 		return GenerateHotp(string(challenge.Secret.GetSecret()), challenge.Event)
 	case MFA_CHALLENGE:
-	
 		return GenerateTotp(string(challenge.Secret.GetSecret()), service.interval)
 	}
 	return ""
+}
+
+func (service *OtpService) ValidateOtp(actualOtp string, challenge Challenge) bool {
+	expectedOtp := service.GenerateOtp(challenge)
+
+	return expectedOtp == actualOtp
 }
