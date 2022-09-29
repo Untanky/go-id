@@ -8,13 +8,20 @@ import (
 	"encoding/binary"
 	"strconv"
 	"strings"
+	"time"
 )
 
-func GenerateHotp(secret string, interval int) string {
+func GenerateTotp(secret string, interval int64) string {
+	t := time.Now().Unix() / interval
+
+	return GenerateHotp(secret, t)
+}
+
+func GenerateHotp(secret string, event int64) string {
 	key, _ := base32.StdEncoding.DecodeString(strings.ToUpper(secret))
 
 	bs := make([]byte, 8)
-	binary.BigEndian.PutUint64(bs, uint64(interval))
+	binary.BigEndian.PutUint64(bs, uint64(event))
 
 	hash := hmac.New(sha1.New, key)
 	hash.Write(bs)
