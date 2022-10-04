@@ -158,7 +158,7 @@ func (suite *AccessTokenTestSuite) SetupTest() {
 	suite.service = accessToken
 }
 
-func (suite *AccessTokenTestSuite) TestAccessToken_DoNothing() {
+func (suite *AccessTokenTestSuite) TestAccessToken_Flow() {
 	sub := "123"
 	sid := "abc"
 	payload := &RefreshTokenPayload{
@@ -184,6 +184,34 @@ func (suite *AccessTokenTestSuite) TestAccessToken_DoNothing() {
 	assert.Nil(suite.T(), err)
 }
 
+func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseOfWrongSecret() {
+	fakeTokenString := jwt.Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.-Msx6dR3kerkZ8g0jyJgpZ1oki3Z-lWmbifP42m-eGg")
+
+	payload, err := suite.service.Validate(fakeTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "signature")
+}
+
+func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseItExpired() {
+	expiredTokenString := jwt.Jwt("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.blIaVaSIiENR_SwTLlDrArVTgt3y5aTy2-FINrbq8xWmRKNs-cMHGR1LO0-LL2hM2ZAkHz-rtGp-xhv8jReHLYED_kHB5xvwsrIlql7BFGhn1uc_tqeR3wUcMhFfh0L0HhJ7G7rkzxGTME71arPg6krpGHAmXqm28ZZiKw0kboNJ9dgMyW32ZzVDP8tNqjV9FfHkzL5slVLjJZtEQ6CceArCBwagkWNnADOZOHzFTH7oHnlQ5BKY8n7iYrm_69lhDhS2CRjNqrkQUFuvBuwQmDj_rgEjndDDuGRoqs6toJg3rTXU3kpQGgQBwlyRVgthONMNeu6CSvwjC1EUGH28TA")
+
+	payload, err := suite.service.Validate(expiredTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "expired")
+}
+
+func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
+	futureTokenString := jwt.Jwt("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.Ew-_TGWMxYMkhaMtm7jSMDXiuOR1QXrlMeQU7czzvaxFqS9rZM3FKFDadpKiqnzG8kP-Am-2Yoyek65kXsg0sFAaeCVDV9Lo9wYQFukDnmb4guWwEbbZunAczpfPeCZNSEB9tp1ezI2frxLtQTLOVN0qi5tvRFicQ1rZm5fdWzkdHvOKPCW-AQTLoYrYUGhAWMR9a5s_vcRLO15xmCybjN8r0g2OKb2RDlBfxV1jYt2fjSrLLNPC4JfIdOFSaxdH4jVHEefhfPaqnWBmYeN_7jAEK295sGGD3Tvz15e5Ekt2MQZO7qZawWwZiz8RqgkIww5EhoDy2VnVXLFTlLGdXw")
+
+	payload, err := suite.service.Validate(futureTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "before issued")
+}
+
 func TestTokenService(t *testing.T) {
 	suite.Run(t, new(RefreshTokenTestSuite))
+	suite.Run(t, new(AccessTokenTestSuite))
 }
