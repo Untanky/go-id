@@ -28,6 +28,8 @@ const (
 	PS512 signingMethod = "PS512"
 )
 
+var SigningMethods = []signingMethod{HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512}
+
 func readBase64Json(base64Json string) (map[string]interface{}, error) {
 	utf8Json, err := base64.RawStdEncoding.DecodeString(base64Json)
 	if err != nil {
