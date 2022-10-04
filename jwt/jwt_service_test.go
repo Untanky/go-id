@@ -13,9 +13,6 @@ type JwtServiceTestSuite struct {
 	suite.Suite
 }
 
-func (suite *JwtServiceTestSuite) SetupTest() {
-}
-
 func (suite *JwtServiceTestSuite) TestJwtCreate_CreateHS256Token() {
 	key := NewSecretValue("secret")
 	jwtService := new(JwtService[SecretString])
