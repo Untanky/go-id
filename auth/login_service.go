@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	. "github.com/Untanky/go-id/src"
+	. "github.com/Untanky/go-id/user"
 )
 
 type LoginService struct {

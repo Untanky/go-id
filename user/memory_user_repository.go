@@ -1,4 +1,4 @@
-package goid
+package user
 
 import "errors"
 
