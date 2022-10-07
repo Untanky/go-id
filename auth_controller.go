@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"net/http"
 	"strings"
 
 	"github.com/Untanky/go-id/auth"
@@ -23,6 +24,15 @@ func (controller *AuthController) Init(authService *auth.LoginService, tokenServ
 func (controller *AuthController) Login(c *gin.Context) {
 	userId, password, shouldReturn := controller.decodeBasicAuthHeader(c)
 	if shouldReturn {
+		return
+	}
+
+	_, err := controller.authService.Login(userId, password)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
 		return
 	}
 

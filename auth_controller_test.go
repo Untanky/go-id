@@ -19,13 +19,23 @@ import (
 type AuthControllerSuite struct {
 	suite.Suite
 
-	controller AuthController
+	knownUsers []*user.User
+	controller *AuthController
 }
 
 func (suite *AuthControllerSuite) SetupTest() {
 	gin.SetMode(gin.TestMode)
+
+	suite.knownUsers = []*user.User{
+		{Identifier: "user", Passkey: "Test1Test!", Status: user.Active},
+	}
+
 	authService := new(auth.LoginService)
 	authService.Init(new(user.MemoryUserRepository), auth.NewArgon2Encrypter())
+
+	for _, user := range suite.knownUsers {
+		authService.Register(user)
+	}
 
 	jwtService := new(jwt.JwtService[secret.SecretString])
 	jwtService.Init(jwt.HS256, secret.NewSecretValue("secret"))
@@ -34,6 +44,7 @@ func (suite *AuthControllerSuite) SetupTest() {
 
 	controller := new(AuthController)
 	controller.Init(authService, tokenService)
+	suite.controller = controller
 
 	assert.NotNil(suite.T(), controller)
 }
@@ -49,14 +60,14 @@ func (suite *AuthControllerSuite) buildContext() (*httptest.ResponseRecorder, *g
 
 func (suite *AuthControllerSuite) TestLogin_SucceedWithBasicToken() {
 	w, context := suite.buildContext()
-	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjp0ZXN0")
+	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpUZXN0MVRlc3Qh")
 
 	suite.controller.Login(context)
 
 	assert.Equal(suite.T(), 200, w.Result().StatusCode)
 	body, _ := io.ReadAll(w.Result().Body)
 	assert.Contains(suite.T(), string(body), "\"userId\":\"user\"")
-	assert.Contains(suite.T(), string(body), "\"password\":\"test\"")
+	assert.Contains(suite.T(), string(body), "\"password\":\"Test1Test!\"")
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWithBearerToken() {
@@ -79,6 +90,17 @@ func (suite *AuthControllerSuite) TestLogin_FailWithBasicTokenNotBase64() {
 	assert.Equal(suite.T(), 400, w.Result().StatusCode)
 	body, _ := io.ReadAll(w.Result().Body)
 	assert.Contains(suite.T(), string(body), "basic authorization must be base64 encoded")
+}
+
+func (suite *AuthControllerSuite) TestLogin_FailWhenCredentialsDoNotMatch() {
+	w, context := suite.buildContext()
+	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpmYWls")
+
+	suite.controller.Login(context)
+
+	assert.Equal(suite.T(), 401, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "unauthorized")
 }
 
 func TestAuthController(t *testing.T) {
