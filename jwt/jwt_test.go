@@ -1,7 +1,6 @@
 package jwt_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -221,7 +220,6 @@ func (suite *JwtTestSuite) TestCreateJwt_WithDifferentSigningMethodsAndEmptyClai
 	initialPayload := map[string]interface{}{}
 
 	for _, signingMethod := range SigningMethods {
-		fmt.Println(signingMethod)
 		var privateKey string
 		var publicKey string
 		if strings.Contains(string(signingMethod), "HS") {
