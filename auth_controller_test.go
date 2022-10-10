@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
 	. "github.com/Untanky/go-id"
@@ -66,8 +67,11 @@ func (suite *AuthControllerSuite) TestLogin_SucceedWithBasicToken() {
 
 	assert.Equal(suite.T(), 200, w.Result().StatusCode)
 	body, _ := io.ReadAll(w.Result().Body)
-	assert.Contains(suite.T(), string(body), "\"userId\":\"user\"")
-	assert.Contains(suite.T(), string(body), "\"password\":\"Test1Test!\"")
+	assert.Contains(suite.T(), string(body), "\"refreshToken\"")
+	regex := regexp.MustCompile(`"refreshToken"[:]"(?P<Token>.*)"`)
+	result := regex.FindStringSubmatch(string(body))
+	token := jwt.Jwt(result[1])
+	assert.Nil(suite.T(), token.Validate("secret"))
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWithBearerToken() {

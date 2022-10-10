@@ -27,8 +27,7 @@ func (controller *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	_, err := controller.authService.Login(userId, password)
-
+	user, err := controller.authService.Login(userId, password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -36,9 +35,20 @@ func (controller *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	payload := auth.RefreshTokenPayload{
+		Sid: "123",
+		Sub: user.Identifier,
+	}
+	token, err := controller.tokenService.Create(&payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "token could not be created",
+		})
+		return
+	}
+
 	c.JSON(200, gin.H{
-		"userId":   userId,
-		"password": password,
+		"refreshToken": token,
 	})
 }
 

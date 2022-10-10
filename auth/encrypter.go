@@ -18,7 +18,7 @@ func NewArgon2Encrypter() Encrypter {
 }
 
 func (encrypter *argon2Encrypter) Encrypt(passkey []byte, salt []byte) []byte {
-	hash := argon2.IDKey(passkey, salt, 1, 128*1024, 8, 1024)
+	hash := argon2.IDKey(passkey, salt, 1, 64*1024, 4, 32)
 
 	return encrypter.stashSalt(hash, salt)
 }
