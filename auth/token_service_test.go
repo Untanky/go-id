@@ -105,11 +105,11 @@ func (suite *RefreshTokenTestSuite) TestRefreshToken_CreateAndValidateJwt() {
 
 	validatedPayload, err := suite.service.Validate(tokenString)
 
+	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), payload.Sid, validatedPayload.Sid)
 	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
-	assert.Equal(suite.T(), float64(time.Now().Unix()), validatedPayload.Iat)
-	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), validatedPayload.Exp)
-	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), time.Now().Unix(), validatedPayload.Iat)
+	assert.Equal(suite.T(), time.Now().AddDate(1, 0, 0).Unix(), validatedPayload.Exp)
 }
 
 func (suite *RefreshTokenTestSuite) TestRefreshToken_ValidateJwtFailsBecauseOfWrongSecret() {
@@ -158,7 +158,7 @@ func (suite *AccessTokenTestSuite) SetupTest() {
 	suite.service = accessToken
 }
 
-func (suite *AccessTokenTestSuite) TestAccessToken_Flow() {
+func (suite *AccessTokenTestSuite) TestAccessToken_CreateAndValidateJwt() {
 	sub := "123"
 	sid := "abc"
 	payload := &RefreshTokenPayload{
@@ -174,14 +174,14 @@ func (suite *AccessTokenTestSuite) TestAccessToken_Flow() {
 	assert.Equal(suite.T(), sid, payloadMap["sid"])
 	assert.Equal(suite.T(), sub, payloadMap["sub"])
 	assert.Equal(suite.T(), float64(time.Now().Unix()), payloadMap["iat"])
-	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), payloadMap["exp"])
+	assert.Equal(suite.T(), float64(time.Now().Unix() + 60 * 60), payloadMap["exp"])
 
 	validatedPayload, err := suite.service.Validate(token)
+	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), payload.Sid, validatedPayload.Sid)
 	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
-	assert.Equal(suite.T(), float64(time.Now().Unix()), validatedPayload.Iat)
-	assert.Equal(suite.T(), float64(time.Now().AddDate(1, 0, 0).Unix()), validatedPayload.Exp)
-	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), time.Now().Unix(), validatedPayload.Iat)
+	assert.Equal(suite.T(), time.Now().Unix() + 60 * 60, validatedPayload.Exp)
 }
 
 func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseOfWrongSecret() {

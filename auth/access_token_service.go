@@ -40,10 +40,13 @@ func (service *AccessTokenService) Validate(token jwt.Jwt) (*RefreshTokenPayload
 		return nil, err
 	}
 
+	iat := int64(payload["iat"].(float64))
+	exp := int64(payload["exp"].(float64))
+
 	return &RefreshTokenPayload{
 		Sid: payload["sid"].(string),
 		Sub: payload["sub"].(string),
-		Iat: payload["iat"].(float64),
-		Exp: payload["exp"].(float64),
+		Iat: iat,
+		Exp: exp,
 	}, nil
 }

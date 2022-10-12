@@ -10,8 +10,8 @@ import (
 type RefreshTokenPayload struct {
 	Sid string
 	Sub string
-	Iat float64
-	Exp float64
+	Iat int64
+	Exp int64
 }
 
 type RefreshTokenService struct {
@@ -45,10 +45,13 @@ func (service *RefreshTokenService) Validate(token jwt.Jwt) (*RefreshTokenPayloa
 		return nil, err
 	}
 
+	iat := int64(payload["iat"].(float64))
+	exp := int64(payload["exp"].(float64))
+
 	return &RefreshTokenPayload{
 		Sid: payload["sid"].(string),
 		Sub: payload["sub"].(string),
-		Iat: payload["iat"].(float64),
-		Exp: payload["exp"].(float64),
+		Iat: iat,
+		Exp: exp,
 	}, nil
 }
