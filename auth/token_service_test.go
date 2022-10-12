@@ -174,14 +174,14 @@ func (suite *AccessTokenTestSuite) TestAccessToken_CreateAndValidateJwt() {
 	assert.Equal(suite.T(), sid, payloadMap["sid"])
 	assert.Equal(suite.T(), sub, payloadMap["sub"])
 	assert.Equal(suite.T(), float64(time.Now().Unix()), payloadMap["iat"])
-	assert.Equal(suite.T(), float64(time.Now().Unix() + 60 * 60), payloadMap["exp"])
+	assert.Equal(suite.T(), float64(time.Now().Unix()+60*60), payloadMap["exp"])
 
 	validatedPayload, err := suite.service.Validate(token)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), payload.Sid, validatedPayload.Sid)
 	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
 	assert.Equal(suite.T(), time.Now().Unix(), validatedPayload.Iat)
-	assert.Equal(suite.T(), time.Now().Unix() + 60 * 60, validatedPayload.Exp)
+	assert.Equal(suite.T(), time.Now().Unix()+60*60, validatedPayload.Exp)
 }
 
 func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseOfWrongSecret() {
@@ -211,7 +211,80 @@ func (suite *AccessTokenTestSuite) TestAccessToken_ValidateJwtFailsBecauseItWasI
 	assert.ErrorContains(suite.T(), err, "before issued")
 }
 
+type ChallengeTokenTestSuite struct {
+	suite.Suite
+	service *ChallengeTokenService
+}
+
+func (suite *ChallengeTokenTestSuite) SetupTest() {
+	secret := NewSecretValue("key")
+
+	jwtService := new(jwt.JwtService[SecretString])
+	jwtService.Init(jwt.HS256, secret)
+
+	challengeToken := new(ChallengeTokenService)
+	challengeToken.Init(jwtService)
+	suite.service = challengeToken
+}
+
+func (suite *ChallengeTokenTestSuite) TestChallengeToken_CreateAndValidateJwt() {
+	sub := "abc"
+	duration, _ := time.ParseDuration("30m")
+	event := int64(5)
+	payload := &ChallengeTokenPayload{
+		Sub:      sub,
+		Duration: duration,
+		Event:    event,
+	}
+
+	token, err := suite.service.Create(payload)
+	assert.Nil(suite.T(), err)
+
+	payloadMap, err := token.Payload()
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), sub, payloadMap["sub"])
+	assert.Equal(suite.T(), float64(time.Now().Unix()), payloadMap["iat"])
+	assert.Equal(suite.T(), float64(time.Now().Unix()+30*60), payloadMap["exp"])
+	assert.Equal(suite.T(), float64(5), payloadMap["event"])
+
+	validatedPayload, err := suite.service.Validate(token)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), payload.Sub, validatedPayload.Sub)
+	assert.Equal(suite.T(), time.Now().Unix(), validatedPayload.Iat)
+	assert.Equal(suite.T(), time.Now().Unix()+30*60, validatedPayload.Exp)
+	assert.Equal(suite.T(), int64(5), validatedPayload.Event)
+	assert.Equal(suite.T(), float64(30), validatedPayload.Duration.Minutes())
+}
+
+func (suite *ChallengeTokenTestSuite) TestChallengeToken_ValidateJwtFailsBecauseOfWrongSecret() {
+	fakeTokenString := jwt.Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.-Msx6dR3kerkZ8g0jyJgpZ1oki3Z-lWmbifP42m-eGg")
+
+	payload, err := suite.service.Validate(fakeTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "signature")
+}
+
+func (suite *ChallengeTokenTestSuite) TestChallengeToken_ValidateJwtFailsBecauseItExpired() {
+	expiredTokenString := jwt.Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2Mjc4OTMxfQ.UoWNJ5MjP4013Wll-m8WeLu2MR6pczHD2usf_A58Yww")
+
+	payload, err := suite.service.Validate(expiredTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "expired")
+}
+
+func (suite *ChallengeTokenTestSuite) TestChallengeToken_ValidateJwtFailsBecauseItWasIssuedInTheFuture() {
+	futureTokenString := jwt.Jwt("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwic2lkIjoiMDk4NzY1NDMyMSIsImlhdCI6MTcxNzIzOTAyMiwiZXhwIjoxNzE2Mjc4OTMxfQ.eMy2GxxPi1MXxz46u_aJ24Bb4N-RDdHjqc_kPDwn8Nw")
+
+	payload, err := suite.service.Validate(futureTokenString)
+
+	assert.Nil(suite.T(), payload)
+	assert.ErrorContains(suite.T(), err, "before issued")
+}
+
 func TestTokenService(t *testing.T) {
 	suite.Run(t, new(RefreshTokenTestSuite))
 	suite.Run(t, new(AccessTokenTestSuite))
+	suite.Run(t, new(ChallengeTokenTestSuite))
 }
