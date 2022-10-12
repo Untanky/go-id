@@ -16,11 +16,13 @@ func (service *AccessTokenService) Init(jwtService *jwt.JwtService[secret.KeyPai
 }
 
 func (service *AccessTokenService) Create(payload *RefreshTokenPayload) (jwt.Jwt, error) {
+	accessTokenDuration, _ := time.ParseDuration("60m")
+
 	payloadMap := make(map[string]interface{})
 	payloadMap["sid"] = payload.Sid
 	payloadMap["sub"] = payload.Sub
 	payloadMap["iat"] = time.Now().Unix()
-	payloadMap["exp"] = time.Now().AddDate(1, 0, 0).Unix()
+	payloadMap["exp"] = time.Now().Add(accessTokenDuration).Unix()
 
 	token, err := service.jwtService.Create(payloadMap)
 
