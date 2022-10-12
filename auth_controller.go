@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"github.com/Untanky/go-id/user"
 	"net/http"
 	"strings"
 
@@ -52,8 +53,40 @@ func (controller *AuthController) Login(c *gin.Context) {
 	})
 }
 
+func (controller *AuthController) Register(c *gin.Context) {
+	userId, password, shouldReturn := controller.decodeBasicAuthHeader(c)
+	if shouldReturn {
+		return
+	}
+
+	newUser := new(user.User)
+	newUser.Identifier = userId
+	newUser.Passkey = password
+	newUser.Status = user.Inactive
+
+	err := controller.authService.Register(newUser)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "userId already exists",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		userId:   userId,
+		password: password,
+	})
+}
+
 func (*AuthController) decodeBasicAuthHeader(c *gin.Context) (string, string, bool) {
 	basic := c.Request.Header.Get(AuthorizationHeader)
+
+	if basic == "" {
+		c.JSON(400, gin.H{
+			"message": "basic authorization required",
+		})
+		return "", "", true
+	}
 
 	tokenType, base64Token := basic[:6], basic[6:]
 

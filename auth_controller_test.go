@@ -74,6 +74,16 @@ func (suite *AuthControllerSuite) TestLogin_SucceedWithBasicToken() {
 	assert.Nil(suite.T(), token.Validate("secret"))
 }
 
+func (suite *AuthControllerSuite) TestLogin_FailWithoutAuthorizationHeader() {
+	w, context := suite.buildContext()
+
+	suite.controller.Login(context)
+
+	assert.Equal(suite.T(), 400, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "basic authorization required")
+}
+
 func (suite *AuthControllerSuite) TestLogin_FailWithBearerToken() {
 	w, context := suite.buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Bearer dXNlcjp0ZXN0")
@@ -105,6 +115,58 @@ func (suite *AuthControllerSuite) TestLogin_FailWhenCredentialsDoNotMatch() {
 	assert.Equal(suite.T(), 401, w.Result().StatusCode)
 	body, _ := io.ReadAll(w.Result().Body)
 	assert.Contains(suite.T(), string(body), "unauthorized")
+}
+
+func (suite *AuthControllerSuite) TestRegister_DoNothing() {
+	w, context := suite.buildContext()
+	context.Request.Header.Add(AuthorizationHeader, "Basic bHVrYXM6VGVzdDFUZXN0IQ==")
+
+	suite.controller.Register(context)
+
+	assert.Equal(suite.T(), 200, w.Result().StatusCode)
+}
+
+func (suite *AuthControllerSuite) TestRegister_FailWithoutAuthorizationHeader() {
+	w, context := suite.buildContext()
+
+	suite.controller.Register(context)
+
+	assert.Equal(suite.T(), 400, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "basic authorization required")
+}
+
+func (suite *AuthControllerSuite) TestRegister_FailWithBearerToken() {
+	w, context := suite.buildContext()
+	context.Request.Header.Add(AuthorizationHeader, "Bearer dXNlcjp0ZXN0")
+
+	suite.controller.Register(context)
+
+	assert.Equal(suite.T(), 400, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "only basic authorization allowed")
+}
+
+func (suite *AuthControllerSuite) TestRegister_FailWithBasicTokenNotBase64() {
+	w, context := suite.buildContext()
+	context.Request.Header.Add(AuthorizationHeader, "Basic dXlc!jp0ZXN0")
+
+	suite.controller.Register(context)
+
+	assert.Equal(suite.T(), 400, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "basic authorization must be base64 encoded")
+}
+
+func (suite *AuthControllerSuite) TestRegister_FailWhenUserIdAlreadyExists() {
+	w, context := suite.buildContext()
+	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpUZXN0MVRlc3Qh")
+
+	suite.controller.Register(context)
+
+	assert.Equal(suite.T(), 400, w.Result().StatusCode)
+	body, _ := io.ReadAll(w.Result().Body)
+	assert.Contains(suite.T(), string(body), "userId already exists")
 }
 
 func TestAuthController(t *testing.T) {
