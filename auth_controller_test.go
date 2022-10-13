@@ -40,11 +40,14 @@ func (suite *AuthControllerSuite) SetupTest() {
 
 	jwtService := new(jwt.JwtService[secret.SecretString])
 	jwtService.Init(jwt.HS256, secret.NewSecretValue("secret"))
-	tokenService := new(auth.RefreshTokenService)
-	tokenService.Init(jwtService)
+	refreshTokenService := new(auth.RefreshTokenService)
+	refreshTokenService.Init(jwtService)
+
+	challengeTokenService := new(auth.ChallengeTokenService)
+	challengeTokenService.Init(jwtService)
 
 	controller := new(AuthController)
-	controller.Init(authService, tokenService)
+	controller.Init(authService, refreshTokenService, challengeTokenService)
 	suite.controller = controller
 
 	assert.NotNil(suite.T(), controller)
@@ -117,13 +120,13 @@ func (suite *AuthControllerSuite) TestLogin_FailWhenCredentialsDoNotMatch() {
 	assert.Contains(suite.T(), string(body), "unauthorized")
 }
 
-func (suite *AuthControllerSuite) TestRegister_DoNothing() {
+func (suite *AuthControllerSuite) TestRegister_SuccessfullyRegister() {
 	w, context := suite.buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic bHVrYXM6VGVzdDFUZXN0IQ==")
 
 	suite.controller.Register(context)
 
-	assert.Equal(suite.T(), 200, w.Result().StatusCode)
+	assert.Equal(suite.T(), 201, w.Result().StatusCode)
 }
 
 func (suite *AuthControllerSuite) TestRegister_FailWithoutAuthorizationHeader() {

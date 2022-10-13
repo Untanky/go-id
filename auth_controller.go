@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/Untanky/go-id/user"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Untanky/go-id/auth"
 	"github.com/gin-gonic/gin"
@@ -13,13 +15,19 @@ import (
 const AuthorizationHeader = "Authorization"
 
 type AuthController struct {
-	authService  *auth.LoginService
-	tokenService auth.TokenService[*auth.RefreshTokenPayload]
+	authService           *auth.LoginService
+	refreshTokenService   auth.TokenService[*auth.RefreshTokenPayload]
+	challengeTokenService auth.TokenService[*auth.ChallengeTokenPayload]
 }
 
-func (controller *AuthController) Init(authService *auth.LoginService, tokenService auth.TokenService[*auth.RefreshTokenPayload]) {
+func (controller *AuthController) Init(
+	authService *auth.LoginService,
+	refreshTokenService auth.TokenService[*auth.RefreshTokenPayload],
+	challengeTokenService auth.TokenService[*auth.ChallengeTokenPayload],
+) {
 	controller.authService = authService
-	controller.tokenService = tokenService
+	controller.refreshTokenService = refreshTokenService
+	controller.challengeTokenService = challengeTokenService
 }
 
 func (controller *AuthController) Login(c *gin.Context) {
@@ -40,7 +48,7 @@ func (controller *AuthController) Login(c *gin.Context) {
 		Sid: "123",
 		Sub: user.Identifier,
 	}
-	token, err := controller.tokenService.Create(&payload)
+	token, err := controller.refreshTokenService.Create(&payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "token could not be created",
@@ -72,10 +80,24 @@ func (controller *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
-		userId:   userId,
-		password: password,
-	})
+	duration, _ := time.ParseDuration("72h")
+
+	payload := &auth.ChallengeTokenPayload{
+		Sub:      userId,
+		Duration: duration,
+		Event:    6,
+	}
+	token, err := controller.challengeTokenService.Create(payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "token could not be created",
+		})
+		return
+	}
+
+	fmt.Println(token)
+
+	c.JSON(http.StatusCreated, nil)
 }
 
 func (*AuthController) decodeBasicAuthHeader(c *gin.Context) (string, string, bool) {
