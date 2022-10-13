@@ -34,8 +34,8 @@ func (suite *AuthControllerSuite) SetupTest() {
 	authService := new(auth.LoginService)
 	authService.Init(new(user.MemoryUserRepository), auth.NewArgon2Encrypter())
 
-	for _, user := range suite.knownUsers {
-		authService.Register(user)
+	for _, u := range suite.knownUsers {
+		authService.Register(u)
 	}
 
 	jwtService := new(jwt.JwtService[secret.SecretString])

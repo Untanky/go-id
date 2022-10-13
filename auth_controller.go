@@ -36,7 +36,7 @@ func (controller *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := controller.authService.Login(userId, password)
+	loggedInUser, err := controller.authService.Login(userId, password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -46,7 +46,7 @@ func (controller *AuthController) Login(c *gin.Context) {
 
 	payload := auth.RefreshTokenPayload{
 		Sid: "123",
-		Sub: user.Identifier,
+		Sub: loggedInUser.Identifier,
 	}
 	token, err := controller.refreshTokenService.Create(&payload)
 	if err != nil {
