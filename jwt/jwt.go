@@ -56,6 +56,11 @@ type payload map[string]interface{}
 
 func (jwt *Jwt) Header() (header, error) {
 	splitJwt := strings.SplitN(string(*jwt), ".", 3)
+
+	if len(splitJwt) <= 3 {
+		errors.New("jwt malformed")
+	}
+
 	headerMap, err := readBase64Json(splitJwt[0])
 	if err != nil {
 		return header{}, err
@@ -75,6 +80,11 @@ func (jwt *Jwt) Header() (header, error) {
 
 func (jwt *Jwt) Payload() (payload, error) {
 	splitJwt := strings.SplitN(string(*jwt), ".", 3)
+
+	if len(splitJwt) <= 3 {
+		errors.New("jwt malformed")
+	}
+
 	payloadMap, err := readBase64Json(splitJwt[1])
 	if err != nil {
 		return payload{}, err

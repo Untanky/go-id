@@ -53,7 +53,7 @@ func (suite *AuthControllerSuite) SetupTest() {
 	assert.NotNil(suite.T(), controller)
 }
 
-func (suite *AuthControllerSuite) buildContext() (*httptest.ResponseRecorder, *gin.Context) {
+func buildContext() (*httptest.ResponseRecorder, *gin.Context) {
 	w := httptest.NewRecorder()
 	context, _ := gin.CreateTestContext(w)
 	context.Request = &http.Request{
@@ -63,7 +63,7 @@ func (suite *AuthControllerSuite) buildContext() (*httptest.ResponseRecorder, *g
 }
 
 func (suite *AuthControllerSuite) TestLogin_SucceedWithBasicToken() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpUZXN0MVRlc3Qh")
 
 	suite.controller.Login(context)
@@ -78,7 +78,7 @@ func (suite *AuthControllerSuite) TestLogin_SucceedWithBasicToken() {
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWithoutAuthorizationHeader() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 
 	suite.controller.Login(context)
 
@@ -88,7 +88,7 @@ func (suite *AuthControllerSuite) TestLogin_FailWithoutAuthorizationHeader() {
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWithBearerToken() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Bearer dXNlcjp0ZXN0")
 
 	suite.controller.Login(context)
@@ -99,7 +99,7 @@ func (suite *AuthControllerSuite) TestLogin_FailWithBearerToken() {
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWithBasicTokenNotBase64() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic dXlc!jp0ZXN0")
 
 	suite.controller.Login(context)
@@ -110,7 +110,7 @@ func (suite *AuthControllerSuite) TestLogin_FailWithBasicTokenNotBase64() {
 }
 
 func (suite *AuthControllerSuite) TestLogin_FailWhenCredentialsDoNotMatch() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpmYWls")
 
 	suite.controller.Login(context)
@@ -121,7 +121,7 @@ func (suite *AuthControllerSuite) TestLogin_FailWhenCredentialsDoNotMatch() {
 }
 
 func (suite *AuthControllerSuite) TestRegister_SuccessfullyRegister() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic bHVrYXM6VGVzdDFUZXN0IQ==")
 
 	suite.controller.Register(context)
@@ -130,7 +130,7 @@ func (suite *AuthControllerSuite) TestRegister_SuccessfullyRegister() {
 }
 
 func (suite *AuthControllerSuite) TestRegister_FailWithoutAuthorizationHeader() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 
 	suite.controller.Register(context)
 
@@ -140,7 +140,7 @@ func (suite *AuthControllerSuite) TestRegister_FailWithoutAuthorizationHeader() 
 }
 
 func (suite *AuthControllerSuite) TestRegister_FailWithBearerToken() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Bearer dXNlcjp0ZXN0")
 
 	suite.controller.Register(context)
@@ -151,7 +151,7 @@ func (suite *AuthControllerSuite) TestRegister_FailWithBearerToken() {
 }
 
 func (suite *AuthControllerSuite) TestRegister_FailWithBasicTokenNotBase64() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic dXlc!jp0ZXN0")
 
 	suite.controller.Register(context)
@@ -162,7 +162,7 @@ func (suite *AuthControllerSuite) TestRegister_FailWithBasicTokenNotBase64() {
 }
 
 func (suite *AuthControllerSuite) TestRegister_FailWhenUserIdAlreadyExists() {
-	w, context := suite.buildContext()
+	w, context := buildContext()
 	context.Request.Header.Add(AuthorizationHeader, "Basic dXNlcjpUZXN0MVRlc3Qh")
 
 	suite.controller.Register(context)
