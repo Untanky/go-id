@@ -4,6 +4,9 @@ import (
 	"github.com/Untanky/go-id/auth"
 	"github.com/Untanky/go-id/jwt"
 	"github.com/Untanky/go-id/secret"
+	"github.com/Untanky/go-id/totp"
+	"github.com/Untanky/go-id/user"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
@@ -17,7 +20,9 @@ type ChallengeControllerSuite struct {
 	suite.Suite
 
 	challengeTokenService auth.TokenService[*auth.ChallengeTokenPayload]
-	controller *ChallengeController
+	user                  *user.User
+	otpService            *totp.OtpService
+	controller            *ChallengeController
 }
 
 func (suite *ChallengeControllerSuite) SetupTest() {
@@ -29,20 +34,46 @@ func (suite *ChallengeControllerSuite) SetupTest() {
 	challengeTokenService.Init(jwtService)
 	suite.challengeTokenService = challengeTokenService
 
+	otpService := new(totp.OtpService)
+	otpService.Init(30)
+	suite.otpService = otpService
+
+	suite.user = &user.User{
+		Identifier: "abc",
+		Status:     user.Inactive,
+	}
+
+	userRepo := new(user.MemoryUserRepository)
+	userRepo.Create(suite.user)
+
+	userService := new(user.UserService)
+	userService.Init(userRepo)
+
 	controller := new(ChallengeController)
-	controller.Init(challengeTokenService)
+	controller.Init(challengeTokenService, userRepo, userService, otpService)
 	suite.controller = controller
 }
 
 func (suite ChallengeControllerSuite) TestVerifyEmail_DoNothing() {
 	w, context := buildContext()
 
+	event := int64(5)
 	duration, _ := time.ParseDuration("30m")
 	payload := &auth.ChallengeTokenPayload{
-		Sub: "abc",
-		Event: 5,
+		Sub:      "abc",
+		Event:    event,
 		Duration: duration,
 	}
+
+	challenge := totp.Challenge{
+		ChallengeType: totp.EMAIL_CHALLENGE,
+		Event:         event,
+		Secret:        secret.NewSecretValue("secret"),
+	}
+	password := suite.otpService.GenerateOtp(challenge)
+
+	context.BindJSON(gin.H{"password": password})
+	w.Flush()
 
 	token, _ := suite.challengeTokenService.Create(payload)
 

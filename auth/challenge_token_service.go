@@ -50,7 +50,6 @@ func (service *ChallengeTokenService) Validate(token jwt.Jwt) (*ChallengeTokenPa
 	iat := int64(payload["iat"].(float64))
 	exp := int64(payload["exp"].(float64))
 	event := int64(payload["event"].(float64))
-	fmt.Printf("%dms", exp-iat)
 	duration, err := time.ParseDuration(fmt.Sprintf("%ds", exp-iat))
 
 	if err != nil {

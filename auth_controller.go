@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/Untanky/go-id/user"
 	"net/http"
 	"strings"
@@ -87,15 +86,13 @@ func (controller *AuthController) Register(c *gin.Context) {
 		Duration: duration,
 		Event:    6,
 	}
-	token, err := controller.challengeTokenService.Create(payload)
+	_, err = controller.challengeTokenService.Create(payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "token could not be created",
 		})
 		return
 	}
-
-	fmt.Println(token)
 
 	c.JSON(http.StatusCreated, nil)
 }
